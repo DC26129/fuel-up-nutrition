@@ -218,6 +218,21 @@ const elements = {
   recordContent: document.querySelector("#recordContent"),
   recordTabs: [...document.querySelectorAll(".record-tab")],
   recordExportButton: document.querySelector("#recordExportButton"),
+  mobileBottomNav: document.querySelector("#mobileBottomNav"),
+  mobileTabs: [...document.querySelectorAll("[data-mobile-tab]")],
+  mobileProfileAvatar: document.querySelector("#mobileProfileAvatar"),
+  mobileProfileName: document.querySelector("#mobileProfileName"),
+  mobileProfileDetail: document.querySelector("#mobileProfileDetail"),
+  mobileProfileButton: document.querySelector("#mobileProfileButton"),
+  mobileTrainingSettingsButton: document.querySelector("#mobileTrainingSettingsButton"),
+  mobileTargetSettingsButton: document.querySelector("#mobileTargetSettingsButton"),
+  mobileAiSettingsButton: document.querySelector("#mobileAiSettingsButton"),
+  mobileExportButton: document.querySelector("#mobileExportButton"),
+  mobileImportButton: document.querySelector("#mobileImportButton"),
+  mobileImportInput: document.querySelector("#mobileImportInput"),
+  mobileTrainingSummary: document.querySelector("#mobileTrainingSummary"),
+  mobileTargetSummary: document.querySelector("#mobileTargetSummary"),
+  mobileAiSummary: document.querySelector("#mobileAiSummary"),
   portionDialog: document.querySelector("#portionDialog"),
   portionProductIcon: document.querySelector("#portionProductIcon"),
   portionBrand: document.querySelector("#portionBrand"),
@@ -307,6 +322,10 @@ let cloudSyncMeta = loadCloudSyncMeta();
 let syncPushTimer = null;
 let syncBusy = false;
 let syncApplyingRemote = false;
+const isNativeRuntime =
+  Boolean(window.Capacitor?.isNativePlatform?.()) ||
+  new URLSearchParams(window.location.search).get("native") === "1";
+let mobileActiveView = window.localStorage.getItem("fuelup-mobile-tab") || "today";
 let toastTimer = null;
 
 function cloneStarterProducts() {
@@ -741,6 +760,7 @@ async function applyCloudState(payload, code, version, { ask = true } = {}) {
 
 function scheduleCloudPush() {
   if (
+    isNativeRuntime ||
     !cloudSyncMeta ||
     cloudSyncMeta.conflict ||
     syncApplyingRemote ||
@@ -957,6 +977,11 @@ function openSyncDialog() {
 
 async function initializeCloudSync() {
   window.FUELUP_CLOUD_INITIALIZED = true;
+  if (isNativeRuntime) {
+    elements.syncButton.hidden = true;
+    elements.syncDialog.remove();
+    return;
+  }
   if (!cloudSyncMeta) {
     elements.syncButton.title = "设备同步未启用";
     return;
@@ -1381,6 +1406,7 @@ function updateSummary() {
   });
 
   updateAiUi();
+  updateMobileSettings();
 }
 
 function renderMeals() {
@@ -1986,6 +2012,144 @@ function exportRecords() {
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast("记录已导出为 CSV");
+}
+
+function setMobileView(view, { scrollToTop = true } = {}) {
+  if (!["today", "ai", "records", "supply", "settings"].includes(view)) return;
+  mobileActiveView = view;
+  window.localStorage.setItem("fuelup-mobile-tab", view);
+  document.querySelectorAll("[data-mobile-view]").forEach((section) => {
+    section.hidden = document.body.classList.contains("mobile-app-mode") && section.dataset.mobileView !== view;
+  });
+  elements.mobileTabs.forEach((tab) => {
+    const active = tab.dataset.mobileTab === view;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-current", active ? "page" : "false");
+  });
+  if (scrollToTop) window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function syncMobileExperience() {
+  const enabled = isNativeRuntime || window.matchMedia("(max-width: 760px)").matches;
+  document.body.classList.toggle("mobile-app-mode", enabled);
+  elements.mobileBottomNav.hidden = !enabled;
+  if (enabled) {
+    setMobileView(mobileActiveView, { scrollToTop: false });
+  } else {
+    document.querySelectorAll("[data-mobile-view]").forEach((section) => {
+      section.hidden = false;
+    });
+  }
+}
+
+function updateMobileSettings() {
+  if (!elements.mobileProfileName) return;
+  const profile = state.profile;
+  elements.mobileProfileAvatar.textContent = profile
+    ? profile.sex === "female"
+      ? "F"
+      : "M"
+    : "?";
+  elements.mobileProfileName.textContent = profile
+    ? `${profile.sex === "female" ? "女性" : "男性"} · ${formatNumber(profile.age)} 岁`
+    : "身体档案";
+  elements.mobileProfileDetail.textContent = profile
+    ? `${formatNumber(profile.height, 1)} cm · ${formatNumber(profile.weight, 1)} kg · ${GOAL_PRESETS[state.goal].label}`
+    : "填写身体数据后开始计算";
+  const workout = EXERCISE_METS[state.workout.type];
+  elements.mobileTrainingSummary.textContent =
+    state.workout.type === "none"
+      ? "无训练"
+      : `${workout.label} · ${formatNumber(state.workout.minutes)} 分钟 · ${
+          state.workout.intensity === "hard"
+            ? "高强度"
+            : state.workout.intensity === "light"
+              ? "轻松"
+              : "适中"
+        }`;
+  elements.mobileTargetSummary.textContent =
+    `Daily Fuel ${formatNumber(state.targets.calories)} kcal · 蛋白质 ${formatNumber(state.targets.protein)} g`;
+  elements.mobileAiSummary.textContent = aiSettings.apiKey
+    ? `已配置 · ${aiSettings.model}`
+    : "API 尚未配置";
+}
+
+function exportLocalBackup() {
+  const backup = {
+    app: "FUEL UP",
+    formatVersion: 1,
+    dataVersion: DATA_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: state,
+  };
+  const serialized = JSON.stringify(backup, null, 2);
+  const fileName = `fuelup-backup-${formatDateKey(new Date())}.json`;
+  if (isNativeRuntime && navigator.share && typeof File !== "undefined") {
+    const shareFile = new File([serialized], fileName, { type: "application/json" });
+    if (!navigator.canShare || navigator.canShare({ files: [shareFile] })) {
+      navigator
+        .share({
+          title: "FUEL UP 本地备份",
+          text: "请保存到文件管理器，以便以后恢复数据。",
+          files: [shareFile],
+        })
+        .then(() => showToast("备份文件已保存或分享"))
+        .catch(() => {});
+      return;
+    }
+  }
+  const blob = new Blob([serialized], {
+    type: "application/json;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast("本地备份已导出");
+}
+
+async function importLocalBackup(file) {
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    const imported = payload?.data || payload;
+    if (!imported || !Array.isArray(imported.products) || !Array.isArray(imported.entries)) {
+      throw new Error("文件中没有可识别的 FUEL UP 数据");
+    }
+    if (!window.confirm("导入会覆盖这台手机当前的记录。当前数据会先保留一份备份，是否继续？")) {
+      return;
+    }
+    window.localStorage.setItem("fuelup-before-import", JSON.stringify(state));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+    showToast("备份导入成功，正在重新载入");
+    window.setTimeout(() => window.location.reload(), 400);
+  } catch (error) {
+    showToast(`导入失败：${error.message}`);
+  } finally {
+    elements.mobileImportInput.value = "";
+  }
+}
+
+function setupNativeBackButton() {
+  if (!isNativeRuntime) return;
+  const appPlugin = window.Capacitor?.Plugins?.App;
+  if (!appPlugin?.addListener) return;
+  appPlugin.addListener("backButton", () => {
+    const openDialogs = [...document.querySelectorAll("dialog[open]")];
+    if (openDialogs.length) {
+      closeDialog(openDialogs.at(-1));
+      return;
+    }
+    if (mobileActiveView !== "today") {
+      setMobileView("today");
+      return;
+    }
+    appPlugin.exitApp?.();
+  });
 }
 
 function renderAll() {
@@ -2742,6 +2906,27 @@ elements.recordContent.addEventListener("submit", (event) => {
 
 elements.recordExportButton.addEventListener("click", exportRecords);
 
+// Mobile app navigation and local backup
+elements.mobileTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setMobileView(tab.dataset.mobileTab));
+});
+elements.mobileProfileButton.addEventListener("click", openProfileDialog);
+elements.mobileTrainingSettingsButton.addEventListener("click", openProfileDialog);
+elements.mobileTargetSettingsButton.addEventListener("click", openTargetDialog);
+elements.mobileAiSettingsButton.addEventListener("click", openAiSettingsDialog);
+elements.mobileExportButton.addEventListener("click", exportLocalBackup);
+elements.mobileImportButton.addEventListener("click", () => elements.mobileImportInput.click());
+elements.mobileImportInput.addEventListener("change", () => {
+  importLocalBackup(elements.mobileImportInput.files?.[0]);
+});
+document.addEventListener("click", (event) => {
+  const libraryLink = event.target.closest('a[href="#foodLibrary"]');
+  if (!libraryLink || !document.body.classList.contains("mobile-app-mode")) return;
+  event.preventDefault();
+  setMobileView("supply");
+});
+window.addEventListener("resize", syncMobileExperience);
+
 // Cloud sync controls
 elements.syncButton.addEventListener("click", openSyncDialog);
 elements.createSyncButton.addEventListener("click", createCloudSync);
@@ -2886,4 +3071,12 @@ syncWorkoutInputs();
 setDateLabel();
 syncCategoryChips();
 renderAll();
+syncMobileExperience();
 initializeCloudSync();
+setupNativeBackButton();
+
+if (!isNativeRuntime && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

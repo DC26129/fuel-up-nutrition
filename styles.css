@@ -5385,6 +5385,287 @@ svg {
   }
 }
 
+.mobile-settings-section {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+body.mobile-app-mode {
+  padding-bottom: 0;
+}
+
+body.mobile-app-mode .site-header {
+  position: sticky;
+  z-index: 45;
+  top: 0;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: 13px;
+  background: rgba(238, 236, 251, 0.88);
+  border-bottom: 1px solid rgba(18, 24, 63, 0.06);
+  backdrop-filter: blur(16px);
+}
+
+body.mobile-app-mode .app-shell {
+  padding-bottom: calc(86px + env(safe-area-inset-bottom));
+}
+
+body.mobile-app-mode .sync-button,
+body.mobile-app-mode #targetSettingsButton {
+  display: none;
+}
+
+body.mobile-app-mode .intro-section {
+  padding: 22px 0 18px;
+}
+
+body.mobile-app-mode .intro-copy h1 {
+  font-size: clamp(40px, 12.5vw, 57px);
+}
+
+body.mobile-app-mode .intro-text {
+  display: none;
+}
+
+body.mobile-app-mode .records-section,
+body.mobile-app-mode .library-section {
+  padding-top: 22px;
+}
+
+body.mobile-app-mode .coach-panel {
+  margin-top: 10px;
+}
+
+body.mobile-app-mode .mobile-settings-section {
+  display: block;
+  padding-top: 23px;
+}
+
+body.mobile-app-mode .mobile-bottom-nav {
+  position: fixed;
+  z-index: 70;
+  right: 12px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: min(520px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 7px 6px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 23px;
+  box-shadow: 0 14px 36px rgba(24, 20, 65, 0.2);
+  backdrop-filter: blur(18px);
+}
+
+.mobile-bottom-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0 5px;
+  color: #9596a8;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+}
+
+.mobile-bottom-nav button.is-active {
+  color: var(--ink);
+  background: var(--lime);
+}
+
+.mobile-bottom-nav svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.mobile-bottom-nav button[data-mobile-tab="ai"].is-active svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.mobile-settings-card {
+  padding: 17px;
+  background: var(--white);
+  border: 1px solid rgba(18, 24, 63, 0.065);
+  border-radius: 23px;
+  box-shadow: 0 10px 26px rgba(38, 33, 84, 0.05);
+}
+
+.mobile-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-profile-row > span {
+  display: grid;
+  flex: 0 0 auto;
+  width: 47px;
+  height: 47px;
+  background: var(--purple);
+  border-radius: 15px;
+  font-family: var(--font-numeric);
+  font-size: 16px;
+  font-weight: 850;
+  place-items: center;
+}
+
+.mobile-profile-row > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-profile-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.mobile-profile-row p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.mobile-profile-row button {
+  padding: 8px 12px;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  background: var(--lime);
+  border: 0;
+  border-radius: 99px;
+}
+
+.mobile-local-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 13px;
+  padding: 8px 10px;
+  color: #52733f;
+  background: #eaf8dd;
+  border-radius: 10px;
+  font-size: 9px;
+}
+
+.mobile-local-badge svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.mobile-settings-group {
+  margin-top: 13px;
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid rgba(18, 24, 63, 0.065);
+  border-radius: 19px;
+}
+
+.mobile-settings-group > p {
+  margin: 0;
+  padding: 11px 14px 6px;
+  color: var(--muted);
+  font-family: var(--font-numeric);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.mobile-settings-group > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(18, 24, 63, 0.06);
+}
+
+.mobile-settings-group > button:hover {
+  background: #faf9ff;
+}
+
+.settings-symbol {
+  display: grid;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-family: var(--font-numeric);
+  font-size: 14px;
+  font-weight: 800;
+  place-items: center;
+}
+
+.settings-symbol--lime {
+  background: var(--lime);
+}
+
+.settings-symbol--purple {
+  background: var(--purple);
+}
+
+.settings-symbol--orange {
+  background: #ffd5c2;
+}
+
+.settings-symbol--cloud {
+  background: #e6ddff;
+}
+
+.mobile-settings-group > button > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-settings-group strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mobile-settings-group small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mobile-settings-group > button > b {
+  color: #a3a4b4;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.mobile-settings-notice {
+  margin: 16px 4px 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.7;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;

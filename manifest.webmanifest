@@ -1,0 +1,33 @@
+{
+  "id": "./",
+  "name": "FUEL UP 营养引擎",
+  "short_name": "FUEL UP",
+  "description": "增肌与减脂营养计算、训练目标、AI 建议和日周月记录。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eeecfb",
+  "theme_color": "#12183f",
+  "lang": "zh-CN",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "fuelup-pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "fuelup-pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "fuelup-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

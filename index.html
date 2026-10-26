@@ -4,11 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#eeecfb" />
+    <meta name="application-name" content="FUEL UP 营养引擎" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FUEL UP" />
     <meta
       name="description"
       content="为增肌与减脂设计的每日营养计算器，可添加商品并计算热量、蛋白质、碳水与脂肪。"
     />
     <title>FUEL/UP 营养引擎</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="fuelup-apple-touch.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -44,6 +51,18 @@
       </symbol>
       <symbol id="icon-refresh" viewBox="0 0 24 24">
         <path d="M20 8a8 8 0 1 0 1 6M20 3v5h-5" />
+      </symbol>
+      <symbol id="icon-home" viewBox="0 0 24 24">
+        <path d="m4 10 8-7 8 7v10H4V10Z" />
+        <path d="M9 20v-6h6v6" />
+      </symbol>
+      <symbol id="icon-chart" viewBox="0 0 24 24">
+        <path d="M4 20V5M4 20h16" />
+        <path d="m7 15 4-5 3 3 5-7" />
+      </symbol>
+      <symbol id="icon-bag" viewBox="0 0 24 24">
+        <path d="M5 8h14l1 12H4L5 8Z" />
+        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
       </symbol>
       <symbol id="icon-arrow" viewBox="0 0 24 24">
         <path d="M5 12h14M13 6l6 6-6 6" />
@@ -84,7 +103,7 @@
     </header>
 
     <main class="app-shell">
-      <section class="intro-section" aria-labelledby="pageTitle">
+      <section class="intro-section" data-mobile-view="today" aria-labelledby="pageTitle">
         <div class="intro-copy">
           <p class="eyebrow"><span>DAILY NUTRITION</span><span id="dateLabel"></span></p>
           <h1 id="pageTitle">今天，<em>吃得有数。</em></h1>
@@ -107,7 +126,7 @@
         </div>
       </section>
 
-      <section class="dashboard-card" aria-labelledby="dashboardTitle">
+      <section class="dashboard-card" data-mobile-view="today" aria-labelledby="dashboardTitle">
         <div class="dashboard-topline">
           <span class="dashboard-mode"><i></i> DAILY FUEL</span>
           <span class="dashboard-goal" id="dashboardGoal">减脂模式 · READY</span>
@@ -145,7 +164,7 @@
         </div>
       </section>
 
-      <section class="macro-grid" aria-label="营养素摄入概览">
+      <section class="macro-grid" data-mobile-view="today" aria-label="营养素摄入概览">
         <article class="macro-card macro-card--lime">
           <div class="macro-heading">
             <span class="macro-icon">P</span>
@@ -187,7 +206,7 @@
         </article>
       </section>
 
-      <section class="coach-panel" id="aiCoach" aria-labelledby="aiCoachTitle">
+      <section class="coach-panel" id="aiCoach" data-mobile-view="ai" aria-labelledby="aiCoachTitle">
         <div class="coach-panel-hero">
           <div class="coach-panel-topline">
             <span><i></i> DEEPSEEK COACH</span>
@@ -308,7 +327,7 @@
         </div>
       </section>
 
-      <section class="plate-section" aria-labelledby="plateTitle">
+      <section class="plate-section" data-mobile-view="today" aria-labelledby="plateTitle">
         <div class="section-heading">
           <div>
             <p class="section-kicker">TODAY'S PLATE</p>
@@ -343,7 +362,7 @@
         </div>
       </section>
 
-      <section class="records-section" id="records" aria-labelledby="recordsTitle">
+      <section class="records-section" id="records" data-mobile-view="records" aria-labelledby="recordsTitle">
         <div class="section-heading records-heading">
           <div>
             <p class="section-kicker">PROGRESS LOG</p>
@@ -362,7 +381,7 @@
         <div class="record-content" id="recordContent"></div>
       </section>
 
-      <section class="library-section" id="foodLibrary" aria-labelledby="libraryTitle">
+      <section class="library-section" id="foodLibrary" data-mobile-view="supply" aria-labelledby="libraryTitle">
         <div class="section-heading library-heading">
           <div>
             <p class="section-kicker">FUEL LIBRARY</p>
@@ -397,11 +416,92 @@
         </div>
       </section>
 
-      <footer class="site-footer">
+      <section class="mobile-settings-section" data-mobile-view="settings" aria-labelledby="mobileSettingsTitle">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">APP SETTINGS</p>
+            <h2 id="mobileSettingsTitle">设置</h2>
+          </div>
+        </div>
+
+        <div class="mobile-settings-card">
+          <div class="mobile-profile-row">
+            <span id="mobileProfileAvatar">M</span>
+            <div>
+              <strong id="mobileProfileName">身体档案</strong>
+              <p id="mobileProfileDetail">填写身体数据后开始计算</p>
+            </div>
+            <button id="mobileProfileButton" type="button">编辑</button>
+          </div>
+          <div class="mobile-local-badge">
+            <svg><use href="#icon-check"></use></svg>
+            数据仅保存在这台手机
+          </div>
+        </div>
+
+        <div class="mobile-settings-group">
+          <p>训练与目标</p>
+          <button id="mobileTrainingSettingsButton" type="button">
+            <span class="settings-symbol settings-symbol--lime">↗</span>
+            <span><strong>身体与今日训练</strong><small id="mobileTrainingSummary">尚未记录训练</small></span>
+            <b>›</b>
+          </button>
+          <button id="mobileTargetSettingsButton" type="button">
+            <span class="settings-symbol settings-symbol--purple">◎</span>
+            <span><strong>营养目标</strong><small id="mobileTargetSummary">Daily Fuel 目标待设置</small></span>
+            <b>›</b>
+          </button>
+        </div>
+
+        <div class="mobile-settings-group">
+          <p>应用与数据</p>
+          <button id="mobileAiSettingsButton" type="button">
+            <span class="settings-symbol settings-symbol--orange">✦</span>
+            <span><strong>DeepSeek API</strong><small id="mobileAiSummary">API 尚未配置</small></span>
+            <b>›</b>
+          </button>
+          <button id="mobileExportButton" type="button">
+            <span class="settings-symbol settings-symbol--cloud">⇩</span>
+            <span><strong>导出本地备份</strong><small>保存为 JSON 文件，可用于恢复数据</small></span>
+            <b>›</b>
+          </button>
+          <button id="mobileImportButton" type="button">
+            <span class="settings-symbol settings-symbol--cloud">⇧</span>
+            <span><strong>导入本地备份</strong><small>从 JSON 文件恢复商品与历史记录</small></span>
+            <b>›</b>
+          </button>
+        </div>
+
+        <input id="mobileImportInput" type="file" accept="application/json,.json" hidden />
+        <p class="mobile-settings-notice">
+          FUEL UP 1.0.0 · 本地单机版<br />
+          卸载 App 或清除应用数据会删除本机记录，请定期导出备份。
+        </p>
+      </section>
+
+      <footer class="site-footer" data-mobile-view="settings">
         <span class="footer-mark"><svg><use href="#icon-spark"></use></svg> FUEL/UP</span>
         <p>营养数据来自商品包装标示，热量按 1 kcal = 4.184 kJ 换算。页面数据仅作日常记录参考。</p>
       </footer>
     </main>
+
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="主要功能" hidden>
+      <button class="is-active" type="button" data-mobile-tab="today">
+        <svg><use href="#icon-home"></use></svg><span>今日</span>
+      </button>
+      <button type="button" data-mobile-tab="ai">
+        <svg><use href="#icon-spark"></use></svg><span>AI</span>
+      </button>
+      <button type="button" data-mobile-tab="records">
+        <svg><use href="#icon-chart"></use></svg><span>记录</span>
+      </button>
+      <button type="button" data-mobile-tab="supply">
+        <svg><use href="#icon-bag"></use></svg><span>补给</span>
+      </button>
+      <button type="button" data-mobile-tab="settings">
+        <svg><use href="#icon-settings"></use></svg><span>设置</span>
+      </button>
+    </nav>
 
     <dialog class="sheet" id="portionDialog">
       <div class="sheet-panel">

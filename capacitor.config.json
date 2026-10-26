@@ -1,0 +1,8 @@
+{
+  "appId": "com.fuelup.nutrition",
+  "appName": "FUEL UP",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

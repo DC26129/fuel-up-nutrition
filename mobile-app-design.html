@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FUEL UP · 手机 App 设计</title>
+    <link rel="stylesheet" href="mobile-app-design.css" />
+  </head>
+  <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="m4 10 8-7 8 7v10H4V10Z"/><path d="M9 20v-6h6v6"/></symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2c.5 5.7 4.3 9.5 10 10-5.7.5-9.5 4.3-10 10-.5-5.7-4.3-9.5-10-10 5.7-.5 9.5-4.3 10-10Z"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V5M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l1 12H4L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    </svg>
+
+    <main class="design-canvas">
+      <header class="design-header">
+        <div class="design-brand">
+          <span class="brand-icon">✦</span>
+          <div>
+            <strong>FUEL<span>/</span>UP</strong>
+            <small>MOBILE APP</small>
+          </div>
+          <i></i>
+          <p>本地单机版 · 功能分区设计</p>
+        </div>
+        <span class="design-tag">ANDROID · VISUAL CONCEPT</span>
+      </header>
+
+      <div class="device-grid">
+        <!-- 今日 -->
+        <article class="device-wrap">
+          <div class="device">
+            <div class="phone-screen">
+              <div class="status-bar"><span>22:46</span><span>▮▮ ◔</span></div>
+              <div class="app-page app-page--today">
+                <header class="mobile-header">
+                  <div>
+                    <p>FRIDAY · 10/26</p>
+                    <h1>今天，<em>吃得有数。</em></h1>
+                  </div>
+                  <span class="avatar">M</span>
+                </header>
+
+                <section class="today-card">
+                  <div class="today-card-copy">
+                    <span>DAILY FUEL</span>
+                    <p><strong>1,446</strong><small>kcal 已摄入</small></p>
+                    <div class="today-progress"><i></i></div>
+                    <em>还可摄入 344 kcal · 目标 1,790</em>
+                  </div>
+                  <div class="today-orbit"><strong>81<small>%</small></strong></div>
+                </section>
+
+                <div class="mode-switch">
+                  <button class="is-active">减脂</button>
+                  <button>增肌</button>
+                  <button>维持</button>
+                </div>
+
+                <section class="mini-macro-grid">
+                  <article class="mini-macro mini-macro--lime">
+                    <div><span>蛋白质</span><b>111%</b></div>
+                    <p>153.9<small>/139g</small></p>
+                    <i><b></b></i>
+                  </article>
+                  <article class="mini-macro mini-macro--purple">
+                    <div><span>碳水</span><b>75%</b></div>
+                    <p>126.4<small>/169g</small></p>
+                    <i><b></b></i>
+                  </article>
+                  <article class="mini-macro mini-macro--orange">
+                    <div><span>脂肪</span><b>73%</b></div>
+                    <p>45.5<small>/62g</small></p>
+                    <i><b></b></i>
+                  </article>
+                  <article class="mini-macro mini-macro--cloud">
+                    <div><span>膳食纤维</span><b>99%</b></div>
+                    <p>24.7<small>/25g</small></p>
+                    <i><b></b></i>
+                  </article>
+                </section>
+
+                <section class="section-block">
+                  <header class="mobile-section-head">
+                    <div><span>TODAY'S PLATE</span><h2>今日餐盘</h2></div>
+                    <b>2 项</b>
+                  </header>
+                  <div class="compact-meal">
+                    <div><strong>即食鸡胸肉</strong><span>动之美 · 100 g</span></div>
+                    <b>124 <small>kcal</small></b>
+                  </div>
+                  <div class="compact-meal">
+                    <div><strong>有机燕麦片</strong><span>好麦多 · 35 g</span></div>
+                    <b>129 <small>kcal</small></b>
+                  </div>
+                </section>
+
+                <button class="quick-add"><b>＋</b> 从补给添加食物</button>
+              </div>
+              <nav class="tab-bar">
+                <button class="is-active"><svg><use href="#i-home"/></svg><span>今日</span></button>
+                <button><svg><use href="#i-spark"/></svg><span>AI</span></button>
+                <button><svg><use href="#i-chart"/></svg><span>记录</span></button>
+                <button><svg><use href="#i-bag"/></svg><span>补给</span></button>
+                <button><svg><use href="#i-settings"/></svg><span>设置</span></button>
+              </nav>
+            </div>
+          </div>
+          <p class="device-label"><b>01</b> 今日 · 核心数据与餐盘</p>
+        </article>
+
+        <!-- AI -->
+        <article class="device-wrap">
+          <div class="device">
+            <div class="phone-screen">
+              <div class="status-bar"><span>22:46</span><span>▮▮ ◔</span></div>
+              <div class="app-page app-page--ai">
+                <header class="page-title">
+                  <div><p>DEEPSEEK COACH</p><h1>AI 今日建议</h1></div>
+                  <span class="gear"><svg><use href="#i-settings"/></svg></span>
+                </header>
+
+                <section class="ai-verdict-card">
+                  <div class="ai-verdict-top"><span><i></i> AI 今日判断</span><b>基于今日记录</b></div>
+                  <h2>热量缺口偏大，<br /><em>先补碳水与纤维。</em></h2>
+                  <p>蛋白质已接近目标，下一餐适合温和补充，不建议一次吃得太撑。</p>
+                  <div class="ai-context"><span>男 · 25 岁</span><span>减脂</span><span>无训练</span></div>
+                </section>
+
+                <section class="ai-mini-metrics">
+                  <div class="ai-metric ai-metric--lime"><span>热量剩余</span><strong>344<small> kcal</small></strong></div>
+                  <div class="ai-metric ai-metric--purple"><span>蛋白缺口</span><strong>0<small> g</small></strong></div>
+                  <div class="ai-metric ai-metric--orange"><span>估算缺口</span><strong>919<small> kcal</small></strong></div>
+                </section>
+
+                <section class="ai-action-list">
+                  <header><span>COACH NOTES</span><h2>接下来这样做</h2><b>3 项</b></header>
+                  <article class="ai-action ai-action--primary"><i>01</i><div><strong>补碳水与纤维</strong><span>优先</span><p>燕麦 35 g 加一份水果，分次补充即可。</p></div></article>
+                  <article class="ai-action"><i>02</i><div><strong>蛋白质小幅补齐</strong><span>建议</span><p>增加适量酸奶或少量鸡肉，不需要大量进食。</p></div></article>
+                  <article class="ai-action"><i>03</i><div><strong>避免长期大缺口</strong><span>注意</span><p>下一餐保持正常分量，不用极端节食追赶。</p></div></article>
+                </section>
+
+                <div class="ai-focus-strip">
+                  <span>TODAY'S FOCUS</span>
+                  <strong>今天的关键不是少吃，<br />而是补得更完整。</strong>
+                  <b>81%</b>
+                </div>
+
+                <button class="primary-action">✦ 重新生成今日建议</button>
+              </div>
+              <nav class="tab-bar">
+                <button><svg><use href="#i-home"/></svg><span>今日</span></button>
+                <button class="is-active"><svg><use href="#i-spark"/></svg><span>AI</span></button>
+                <button><svg><use href="#i-chart"/></svg><span>记录</span></button>
+                <button><svg><use href="#i-bag"/></svg><span>补给</span></button>
+                <button><svg><use href="#i-settings"/></svg><span>设置</span></button>
+              </nav>
+            </div>
+          </div>
+          <p class="device-label"><b>02</b> AI · 判断与行动建议</p>
+        </article>
+
+        <!-- 记录 -->
+        <article class="device-wrap">
+          <div class="device">
+            <div class="phone-screen">
+              <div class="status-bar"><span>22:46</span><span>▮▮ ◔</span></div>
+              <div class="app-page app-page--records">
+                <header class="page-title">
+                  <div><p>PROGRESS LOG</p><h1>身体与饮食记录</h1></div>
+                  <span class="more">•••</span>
+                </header>
+
+                <div class="segmented">
+                  <button class="is-active">日</button><button>周</button><button>月</button>
+                </div>
+
+                <div class="date-nav"><button>←</button><div><strong>10月26日 · 周一</strong><span>今天 · 记录进行中</span></div><button>→</button></div>
+
+                <section class="weight-summary">
+                  <div>
+                    <span>MORNING WEIGHT</span>
+                    <p><strong>77.6</strong><small>kg</small></p>
+                    <em>7 日均值 77.6 kg</em>
+                  </div>
+                  <button>记录晨重</button>
+                </section>
+
+                <section class="record-grid">
+                  <article class="record-tile record-tile--lime"><span>热量</span><strong>1,201<small> kcal</small></strong><em>目标 1,790</em></article>
+                  <article class="record-tile record-tile--purple"><span>蛋白质</span><strong>127.8<small> g</small></strong><em>接近目标</em></article>
+                  <article class="record-tile record-tile--purple"><span>碳水</span><strong>106.3<small> g</small></strong><em>目标 169</em></article>
+                  <article class="record-tile record-tile--orange"><span>脂肪</span><strong>39.9<small> g</small></strong><em>目标 62</em></article>
+                </section>
+
+                <article class="record-chart">
+                  <header><strong>近 7 日体重</strong><span>晨重 · 7 日均线</span></header>
+                  <svg viewBox="0 0 310 125">
+                    <path class="area" d="M15 32 L70 45 L120 40 L170 60 L220 66 L270 82 L295 88 L295 110 L15 110Z" />
+                    <path class="avg" d="M15 39 L70 47 L120 49 L170 56 L220 68 L270 77 L295 84" />
+                    <path class="raw" d="M15 29 L70 46 L120 37 L170 63 L220 63 L270 85 L295 91" />
+                    <circle cx="295" cy="91" r="3" />
+                    <text x="14" y="122">10/20</text><text x="132" y="122">10/23</text><text x="270" y="122">10/26</text>
+                  </svg>
+                </article>
+
+                <article class="deficit-card"><div><span>实际热量缺口</span><strong>+1,164<small> kcal</small></strong></div><p>估算总消耗 2,365 − 摄入 1,201</p></article>
+              </div>
+              <nav class="tab-bar">
+                <button><svg><use href="#i-home"/></svg><span>今日</span></button>
+                <button><svg><use href="#i-spark"/></svg><span>AI</span></button>
+                <button class="is-active"><svg><use href="#i-chart"/></svg><span>记录</span></button>
+                <button><svg><use href="#i-bag"/></svg><span>补给</span></button>
+                <button><svg><use href="#i-settings"/></svg><span>设置</span></button>
+              </nav>
+            </div>
+          </div>
+          <p class="device-label"><b>03</b> 记录 · 日周月趋势</p>
+        </article>
+
+        <!-- 补给 -->
+        <article class="device-wrap">
+          <div class="device">
+            <div class="phone-screen">
+              <div class="status-bar"><span>22:46</span><span>▮▮ ◔</span></div>
+              <div class="app-page app-page--library">
+                <header class="page-title">
+                  <div><p>FUEL LIBRARY</p><h1>补给站</h1></div>
+                  <button class="round-add">＋</button>
+                </header>
+
+                <div class="search"><span>⌕</span><p>搜索商品或品牌</p></div>
+                <div class="category-row">
+                  <button class="is-active">全部</button><button>蛋白</button><button>主食</button><button>蛋类</button><button>我的</button>
+                </div>
+
+                <div class="food-grid">
+                  <article class="food-card">
+                    <div><span class="food-tag food-tag--meal">主食</span><button>✎</button></div>
+                    <h3>100% 有机燕麦片</h3><p>好麦多</p>
+                    <div class="food-numbers"><span><b>129</b> kcal</span><span><b>4.9</b> g蛋白</span></div>
+                    <footer><span>默认 35 g</span><button>＋ 加入</button></footer>
+                  </article>
+                  <article class="food-card">
+                    <div><span class="food-tag food-tag--protein">蛋白</span><button>✎</button></div>
+                    <h3>去皮水煮鸡腿</h3><p>鲨鱼菲特</p>
+                    <div class="food-numbers"><span><b>131</b> kcal</span><span><b>24</b> g蛋白</span></div>
+                    <footer><span>默认 85 g</span><button>＋ 加入</button></footer>
+                  </article>
+                  <article class="food-card">
+                    <div><span class="food-tag food-tag--protein">蛋白</span><button>✎</button></div>
+                    <h3>即食鸡胸肉</h3><p>动之美</p>
+                    <div class="food-numbers"><span><b>124</b> kcal</span><span><b>28</b> g蛋白</span></div>
+                    <footer><span>默认 100 g</span><button>＋ 加入</button></footer>
+                  </article>
+                  <article class="food-card">
+                    <div><span class="food-tag food-tag--meal">主食</span><button>✎</button></div>
+                    <h3>酵母蛋白吐司</h3><p>燃铁猩球</p>
+                    <div class="food-numbers"><span><b>130</b> kcal</span><span><b>7.6</b> g蛋白</span></div>
+                    <footer><span>默认 50 g</span><button>＋ 加入</button></footer>
+                  </article>
+                </div>
+
+                <button class="add-product"><b>＋</b> 添加自定义商品</button>
+              </div>
+              <nav class="tab-bar">
+                <button><svg><use href="#i-home"/></svg><span>今日</span></button>
+                <button><svg><use href="#i-spark"/></svg><span>AI</span></button>
+                <button><svg><use href="#i-chart"/></svg><span>记录</span></button>
+                <button class="is-active"><svg><use href="#i-bag"/></svg><span>补给</span></button>
+                <button><svg><use href="#i-settings"/></svg><span>设置</span></button>
+              </nav>
+            </div>
+          </div>
+          <p class="device-label"><b>04</b> 补给 · 搜索与管理商品</p>
+        </article>
+
+        <!-- 设置 -->
+        <article class="device-wrap">
+          <div class="device">
+            <div class="phone-screen">
+              <div class="status-bar"><span>22:46</span><span>▮▮ ◔</span></div>
+              <div class="app-page app-page--settings">
+                <header class="page-title">
+                  <div><p>SETTINGS</p><h1>设置</h1></div>
+                </header>
+
+                <section class="profile-card">
+                  <span class="profile-avatar-large">M</span>
+                  <div><strong>男性 · 25 岁</strong><p>173 cm · 77.6 kg · 减脂</p></div>
+                  <button>编辑</button>
+                </section>
+
+                <div class="local-badge"><svg><use href="#i-lock"/></svg><span>数据仅保存在这台手机</span><i></i></div>
+
+                <section class="settings-list">
+                  <header><span>训练与目标</span></header>
+                  <button><i class="setting-icon setting-icon--lime">↗</i><div><strong>身体与今日训练</strong><small>BMR 1,600 kcal · 爬坡 55 分钟</small></div><b>›</b></button>
+                  <button><i class="setting-icon setting-icon--purple">◎</i><div><strong>营养目标</strong><small>Daily Fuel 1,790 kcal · 蛋白质 139 g</small></div><b>›</b></button>
+                </section>
+
+                <section class="settings-list">
+                  <header><span>应用</span></header>
+                  <button><i class="setting-icon setting-icon--orange">✦</i><div><strong>DeepSeek API</strong><small>已配置 · deepseek-chat</small></div><b>›</b></button>
+                  <button><i class="setting-icon setting-icon--cloud">⇩</i><div><strong>本地数据备份</strong><small>导出或导入 JSON 备份文件</small></div><b>›</b></button>
+                  <button><i class="setting-icon setting-icon--gray">i</i><div><strong>关于 FUEL UP</strong><small>版本 1.0.0 · 本地单机版</small></div><b>›</b></button>
+                </section>
+
+                <p class="settings-note">卸载 App 或清除应用数据会删除本机记录，请定期导出备份。</p>
+              </div>
+              <nav class="tab-bar">
+                <button><svg><use href="#i-home"/></svg><span>今日</span></button>
+                <button><svg><use href="#i-spark"/></svg><span>AI</span></button>
+                <button><svg><use href="#i-chart"/></svg><span>记录</span></button>
+                <button><svg><use href="#i-bag"/></svg><span>补给</span></button>
+                <button class="is-active"><svg><use href="#i-settings"/></svg><span>设置</span></button>
+              </nav>
+            </div>
+          </div>
+          <p class="device-label"><b>05</b> 设置 · 资料与本地备份</p>
+        </article>
+      </div>
+
+      <footer class="design-note">
+        <strong>设计说明</strong>
+        <span>五个功能各占一个独立页面，底部导航固定；新增食物、商品编辑和晨重记录均使用手机底部面板。</span>
+      </footer>
+    </main>
+  </body>
+</html>

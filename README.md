@@ -30,3 +30,15 @@
 ## 部署
 
 本项目为纯静态网页，可直接通过 GitHub Pages 托管。
+
+## Android App
+
+APK 使用 Capacitor 打包，运行时采用手机端五分区界面：
+
+- 今日
+- AI
+- 记录
+- 补给
+- 设置
+
+APK 为本地单机版，不启用 Supabase 设备同步。商品、饮食、目标和历史记录保存在手机应用内，DeepSeek API Key 同样只保存在本机。设置页支持 JSON 本地备份导入和导出。
