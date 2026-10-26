@@ -355,6 +355,16 @@
           </div>
         </div>
 
+        <button class="food-log-launcher" id="openQuickAddButton" type="button">
+          <span class="food-log-launcher-icon"><svg><use href="#icon-plus"></use></svg></span>
+          <span>
+            <small>LOG TODAY'S FOOD</small>
+            <strong>添加今天吃的</strong>
+            <em>搜索补给站，选择食物和实际克数</em>
+          </span>
+          <svg class="food-log-launcher-arrow"><use href="#icon-arrow"></use></svg>
+        </button>
+
         <div class="plate-card">
           <div class="plate-summary">
             <span class="plate-orb"><svg><use href="#icon-spark"></use></svg></span>
@@ -373,7 +383,7 @@
               <strong>餐盘还是空的</strong>
               <p>从下方补给站挑一份食物，营养数据会自动汇总。</p>
             </div>
-            <a href="#foodLibrary">去挑选</a>
+            <button type="button" data-open-quick-add>添加食物</button>
           </div>
         </div>
       </section>
@@ -402,7 +412,7 @@
           <div>
             <p class="section-kicker">FUEL LIBRARY</p>
             <h2 id="libraryTitle">补给站</h2>
-            <p class="section-description">营养数据按每 100 克换算，点击即可按实际食用量加入餐盘。</p>
+            <p class="section-description">在这里新增和编辑商品；记录今天吃了什么，请回到“今日”快速添加。</p>
           </div>
           <button class="primary-button" id="openProductDialogButton" type="button">
             <svg><use href="#icon-plus"></use></svg>
@@ -518,6 +528,39 @@
         <svg><use href="#icon-settings"></use></svg><span>设置</span>
       </button>
     </nav>
+
+    <dialog class="sheet quick-add-sheet" id="quickAddDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>LOG FOOD</p>
+          <h2>添加今天吃的</h2>
+          <span>从补给站选择食物，下一步填写实际食用克数。</span>
+        </div>
+
+        <label class="search-field quick-add-search">
+          <svg><use href="#icon-search"></use></svg>
+          <input id="quickFoodSearch" type="search" placeholder="搜索食物名称或品牌" autocomplete="off" />
+        </label>
+        <div class="quick-add-filters" id="quickAddFilters" role="group" aria-label="快速添加分类">
+          <button class="is-active" type="button" data-quick-category="all">全部</button>
+          <button type="button" data-quick-category="蛋白">蛋白</button>
+          <button type="button" data-quick-category="主食">主食</button>
+          <button type="button" data-quick-category="蛋类">蛋类</button>
+        </div>
+
+        <div class="quick-food-list" id="quickFoodList"></div>
+
+        <button class="quick-add-new-product" id="quickAddNewProductButton" type="button">
+          <svg><use href="#icon-plus"></use></svg>
+          补给站里没有？添加新商品
+        </button>
+      </div>
+    </dialog>
 
     <dialog class="sheet" id="portionDialog">
       <div class="sheet-panel">

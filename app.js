@@ -204,6 +204,12 @@ const elements = {
   productGrid: document.querySelector("#productGrid"),
   noResults: document.querySelector("#noResults"),
   openProductDialogButton: document.querySelector("#openProductDialogButton"),
+  openQuickAddButton: document.querySelector("#openQuickAddButton"),
+  quickAddDialog: document.querySelector("#quickAddDialog"),
+  quickFoodSearch: document.querySelector("#quickFoodSearch"),
+  quickAddFilters: [...document.querySelectorAll("[data-quick-category]")],
+  quickFoodList: document.querySelector("#quickFoodList"),
+  quickAddNewProductButton: document.querySelector("#quickAddNewProductButton"),
   syncButton: document.querySelector("#syncButton"),
   syncDialog: document.querySelector("#syncDialog"),
   syncSetupView: document.querySelector("#syncSetupView"),
@@ -332,6 +338,8 @@ const elements = {
 let state = loadState();
 let aiSettings = loadAiSettings();
 let activeCategory = "all";
+let quickAddCategory = "all";
+let returnToQuickAddAfterProduct = false;
 let selectedProductId = null;
 let editingEntryId = null;
 let editingProductId = null;
@@ -1743,15 +1751,81 @@ function renderProducts() {
           </div>
           <div class="product-footer">
             <span class="product-serving">默认${product.boneIn ? "可食重" : ""} ${formatNumber(product.servingGrams)} g<br>${product.boneIn ? "营养按可食部换算" : basisLabel}</span>
-            <button class="product-add-button" type="button" data-product-action="add">
-              <svg><use href="#icon-plus"></use></svg>
-              加入
+            <button class="product-add-button" type="button" data-product-action="edit">
+              <svg><use href="#icon-edit"></use></svg>
+              编辑详情
             </button>
           </div>
         </article>
       `;
     })
     .join("");
+}
+
+function renderQuickAdd() {
+  const query = elements.quickFoodSearch.value.trim().toLowerCase();
+  const recentIds = state.entries.map((entry) => entry.productId).reverse();
+  const products = state.products
+    .filter((product) => {
+      const categoryMatch =
+        quickAddCategory === "all" || product.category === quickAddCategory;
+      const haystack = `${product.name} ${product.brand} ${product.category}`.toLowerCase();
+      return categoryMatch && (!query || haystack.includes(query));
+    })
+    .sort((a, b) => {
+      if (!query) {
+        const aRecent = recentIds.indexOf(a.id);
+        const bRecent = recentIds.indexOf(b.id);
+        if (aRecent !== -1 || bRecent !== -1) {
+          if (aRecent === -1) return 1;
+          if (bRecent === -1) return -1;
+          return aRecent - bRecent;
+        }
+      }
+      return a.name.localeCompare(b.name, "zh-CN");
+    });
+
+  elements.quickAddFilters.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.quickCategory === quickAddCategory);
+  });
+
+  if (products.length === 0) {
+    elements.quickFoodList.innerHTML = `
+      <div class="quick-food-empty">
+        <strong>没有找到食物</strong>
+        <span>换个关键词，或先把商品添加到补给站。</span>
+      </div>
+    `;
+    return;
+  }
+
+  elements.quickFoodList.innerHTML = products
+    .map((product) => {
+      const factor = product.servingGrams / product.baseGrams;
+      const category = CATEGORY_STYLES[product.category] || CATEGORY_STYLES.其他;
+      return `
+        <button class="quick-food-row" type="button" data-quick-food-id="${escapeHTML(product.id)}">
+          <span class="quick-food-tag" style="--quick-accent:${category.accent}">${escapeHTML(product.category)}</span>
+          <span class="quick-food-copy">
+            <strong>${escapeHTML(product.name)}</strong>
+            <small>${escapeHTML(product.brand)} · 默认 ${formatNumber(product.servingGrams)} g</small>
+          </span>
+          <span class="quick-food-values">
+            <strong>${formatNumber((product.energyKj * factor) / 4.184)} kcal</strong>
+            <small>蛋白 ${formattedMacro(product.protein * factor)} g</small>
+          </span>
+          <span class="quick-food-add"><svg><use href="#icon-plus"></use></svg></span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function openQuickAddDialog() {
+  elements.quickFoodSearch.value = "";
+  quickAddCategory = "all";
+  renderQuickAdd();
+  openDialog(elements.quickAddDialog);
 }
 
 function getRecordPeriod() {
@@ -2534,6 +2608,7 @@ function addMeal(productId, grams, grossGrams = null) {
   persistState();
   closeDialog(elements.portionDialog);
   renderAll();
+  if (elements.quickAddDialog.open) renderQuickAdd();
   showToast(`${product.name} 已加入今日餐盘`);
 }
 
@@ -3024,6 +3099,10 @@ function handleProductSubmit(event) {
   syncCategoryChips();
   renderAll();
   showToast(existingProduct ? `${product.name} 已更新` : `${product.name} 已存入补给站`);
+  if (returnToQuickAddAfterProduct) {
+    returnToQuickAddAfterProduct = false;
+    openQuickAddDialog();
+  }
 }
 
 function deleteCustomProduct(productId) {
@@ -3169,6 +3248,28 @@ elements.recordContent.addEventListener("submit", (event) => {
 
 elements.recordExportButton.addEventListener("click", exportRecords);
 
+// Today food-log controls
+elements.openQuickAddButton.addEventListener("click", openQuickAddDialog);
+document.querySelectorAll("[data-open-quick-add]").forEach((button) => {
+  button.addEventListener("click", openQuickAddDialog);
+});
+elements.quickFoodSearch.addEventListener("input", renderQuickAdd);
+elements.quickAddFilters.forEach((button) => {
+  button.addEventListener("click", () => {
+    quickAddCategory = button.dataset.quickCategory;
+    renderQuickAdd();
+  });
+});
+elements.quickFoodList.addEventListener("click", (event) => {
+  const row = event.target.closest("[data-quick-food-id]");
+  if (row) openPortionDialog(row.dataset.quickFoodId);
+});
+elements.quickAddNewProductButton.addEventListener("click", () => {
+  closeDialog(elements.quickAddDialog);
+  returnToQuickAddAfterProduct = true;
+  openProductEditor();
+});
+
 // Mobile app navigation and local backup
 elements.mobileTabs.forEach((tab) => {
   tab.addEventListener("click", () => setMobileView(tab.dataset.mobileTab));
@@ -3275,6 +3376,7 @@ elements.productGrid.addEventListener("click", (event) => {
   if (actionButton.dataset.productAction === "add") {
     openPortionDialog(productId);
   } else if (actionButton.dataset.productAction === "edit") {
+    returnToQuickAddAfterProduct = false;
     openProductEditor(productId);
   } else if (actionButton.dataset.productAction === "delete") {
     deleteCustomProduct(productId);
@@ -3282,6 +3384,7 @@ elements.productGrid.addEventListener("click", (event) => {
 });
 
 elements.openProductDialogButton.addEventListener("click", () => {
+  returnToQuickAddAfterProduct = false;
   openProductEditor();
 });
 
