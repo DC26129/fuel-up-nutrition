@@ -4463,6 +4463,39 @@ svg {
   border-radius: 16px;
 }
 
+.sync-use-local-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: -2px 0 14px;
+  padding: 10px;
+  cursor: pointer;
+  background: #fff9df;
+  border: 1px solid rgba(164, 126, 30, 0.12);
+  border-radius: 11px;
+}
+
+.sync-use-local-option input {
+  width: 15px;
+  height: 15px;
+  margin: 2px 0 0;
+  accent-color: var(--ink);
+}
+
+.sync-use-local-option strong {
+  display: block;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.sync-use-local-option small {
+  display: block;
+  margin-top: 2px;
+  color: #806f49;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
 .sync-active-status {
   display: flex;
   align-items: center;
@@ -4626,6 +4659,17 @@ svg {
 .sync-security-note {
   margin: 16px 2px 0;
   color: var(--muted);
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.sync-origin-note {
+  margin: 14px 2px 0;
+  padding: 9px 10px;
+  color: #796a46;
+  background: #fff8e3;
+  border: 1px solid rgba(164, 126, 30, 0.1);
+  border-radius: 9px;
   font-size: 8px;
   line-height: 1.55;
 }

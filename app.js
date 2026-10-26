@@ -813,6 +813,7 @@ async function createCloudSync() {
 
 async function connectCloudSync(form) {
   const code = normalizeSyncCode(form.elements.syncCode.value);
+  const useLocalData = Boolean(form.elements.useLocalData.checked);
   if (code.length !== 32) {
     elements.syncError.textContent = "同步码无效，请粘贴完整的 32 位同步码。";
     elements.syncError.classList.add("is-visible");
@@ -824,6 +825,31 @@ async function connectCloudSync(form) {
   try {
     const remote = await pullCloudPayload(code);
     if (remote.payload) {
+      if (useLocalData) {
+        const confirmed = window.confirm(
+          "将使用当前这个页面里的数据覆盖云端记录。请先确认这里已经包含今晚的最新数据，是否继续？"
+        );
+        if (!confirmed) {
+          setSyncVisual("idle", "");
+          return;
+        }
+        cloudSyncMeta = {
+          code,
+          syncId: remote.syncId,
+          version: remote.payload.version,
+          lastSyncedAt: "",
+          dirty: true,
+          conflict: false,
+        };
+        saveCloudSyncMeta();
+        renderSyncDialog();
+        const ok = await pushCloudState({
+          expectedVersion: remote.payload.version,
+          codeInput: code,
+        });
+        if (ok) showToast("当前页面数据已上传并覆盖云端");
+        return;
+      }
       await applyCloudState(remote.payload, code, remote.payload.version, { ask: true });
       return;
     }
@@ -2723,10 +2749,15 @@ elements.connectSyncForm.addEventListener("submit", (event) => {
   event.preventDefault();
   connectCloudSync(elements.connectSyncForm);
 });
+elements.connectSyncForm.elements.useLocalData.addEventListener("change", (event) => {
+  elements.connectSyncForm.querySelector("button[type=submit]").textContent = event.target.checked
+    ? "连接并上传当前页面数据"
+    : "连接并恢复云端数据";
+});
 elements.copySyncCodeButton.addEventListener("click", copySyncCode);
 elements.syncUploadButton.addEventListener("click", async () => {
   const ok = await pushCloudState();
-  if (ok) showToast("本机数据已上传");
+  if (ok) showToast("当前页面数据已上传");
 });
 elements.syncPullButton.addEventListener("click", () => pullCloudNow({ ask: true }));
 elements.forceSyncButton.addEventListener("click", forceCloudOverwrite);

@@ -664,6 +664,13 @@
                 required
               />
             </label>
+            <label class="sync-use-local-option">
+              <input name="useLocalData" type="checkbox" />
+              <span>
+                <strong>保留当前页面数据并覆盖云端</strong>
+                <small>如果今晚的新记录在这个页面里，请勾选。未勾选时会用云端覆盖当前页面。</small>
+              </span>
+            </label>
             <button class="sheet-primary-button" type="submit">
               连接并恢复云端数据
             </button>
@@ -691,7 +698,7 @@
           <div class="sync-manual-actions">
             <button id="syncUploadButton" type="button">
               <svg><use href="#icon-cloud"></use></svg>
-              上传本机数据
+              上传当前页面数据
             </button>
             <button id="syncPullButton" type="button">
               <svg><use href="#icon-refresh"></use></svg>
@@ -711,6 +718,9 @@
         </div>
 
         <div class="form-error" id="syncError" role="alert"></div>
+        <p class="sync-origin-note">
+          “本机数据”指当前这个网址保存在浏览器里的数据。本地文件和 GitHub Pages 是两套独立数据，首次同步必须从包含最新记录的页面上传。
+        </p>
         <p class="sync-security-note">
           数据使用同步码派生的 AES-GCM 密钥加密。同步码丢失后无法恢复云端内容，请妥善保存。
         </p>
