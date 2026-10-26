@@ -1,5 +1,11 @@
 const STORAGE_KEY = "fuelup-nutrition-v1";
 const DEEPSEEK_SETTINGS_KEY = "fuelup-deepseek-v1";
+const CLOUD_SYNC_KEY = "fuelup-cloud-sync-v1";
+const CLOUD_SYNC_CONFIG = {
+  url: "https://pxsbymkfqgexygktaokh.supabase.co",
+  publishableKey:
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4c2J5bWtmcWdleHlna3Rhb2toIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTc5NjYsImV4cCI6MjEwODU5Mzk2Nn0.JsujQANAdEXqDVeyGQxN6puH155PNt2SyhXzn0vg_Ls",
+};
 const DATA_VERSION = 6;
 
 const GOAL_PRESETS = {
@@ -192,6 +198,23 @@ const elements = {
   productGrid: document.querySelector("#productGrid"),
   noResults: document.querySelector("#noResults"),
   openProductDialogButton: document.querySelector("#openProductDialogButton"),
+  syncButton: document.querySelector("#syncButton"),
+  syncDialog: document.querySelector("#syncDialog"),
+  syncSetupView: document.querySelector("#syncSetupView"),
+  syncActiveView: document.querySelector("#syncActiveView"),
+  createSyncButton: document.querySelector("#createSyncButton"),
+  connectSyncForm: document.querySelector("#connectSyncForm"),
+  syncCodeDisplay: document.querySelector("#syncCodeDisplay"),
+  copySyncCodeButton: document.querySelector("#copySyncCodeButton"),
+  syncUploadButton: document.querySelector("#syncUploadButton"),
+  syncPullButton: document.querySelector("#syncPullButton"),
+  syncConflictPanel: document.querySelector("#syncConflictPanel"),
+  forceSyncButton: document.querySelector("#forceSyncButton"),
+  disconnectSyncButton: document.querySelector("#disconnectSyncButton"),
+  syncError: document.querySelector("#syncError"),
+  syncActiveTitle: document.querySelector("#syncActiveTitle"),
+  syncActiveStatus: document.querySelector("#syncActiveStatus"),
+  syncActiveDot: document.querySelector("#syncActiveDot"),
   recordContent: document.querySelector("#recordContent"),
   recordTabs: [...document.querySelectorAll(".record-tab")],
   recordExportButton: document.querySelector("#recordExportButton"),
@@ -280,6 +303,10 @@ let editingEntryId = null;
 let editingProductId = null;
 let recordView = "day";
 let recordCursorKey = formatDateKey(new Date());
+let cloudSyncMeta = loadCloudSyncMeta();
+let syncPushTimer = null;
+let syncBusy = false;
+let syncApplyingRemote = false;
 let toastTimer = null;
 
 function cloneStarterProducts() {
@@ -501,10 +528,431 @@ function saveAiSettings(settings) {
   window.localStorage.setItem(DEEPSEEK_SETTINGS_KEY, JSON.stringify(aiSettings));
 }
 
+function loadCloudSyncMeta() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(CLOUD_SYNC_KEY) || "null");
+    const code = normalizeSyncCode(stored?.code || "");
+    if (!stored || code.length !== 32) return null;
+    return {
+      code,
+      syncId: String(stored.syncId || ""),
+      version: Math.max(0, positiveNumber(stored.version, 0)),
+      lastSyncedAt: String(stored.lastSyncedAt || ""),
+      dirty: Boolean(stored.dirty),
+      conflict: Boolean(stored.conflict),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveCloudSyncMeta() {
+  if (!cloudSyncMeta) {
+    window.localStorage.removeItem(CLOUD_SYNC_KEY);
+    return;
+  }
+  window.localStorage.setItem(CLOUD_SYNC_KEY, JSON.stringify(cloudSyncMeta));
+}
+
+function normalizeSyncCode(value) {
+  return String(value || "").toLowerCase().replace(/[^a-f0-9]/g, "");
+}
+
+function displaySyncCode(code) {
+  return normalizeSyncCode(code).toUpperCase().match(/.{1,4}/g)?.join("-") || "";
+}
+
+function generateSyncCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(value) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function digestBytes(value) {
+  return new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))
+  );
+}
+
+async function deriveSyncIdentity(code) {
+  const normalized = normalizeSyncCode(code);
+  const syncId = [...(await digestBytes(`fuelup-sync-id:${normalized}`))]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  const keyBytes = await digestBytes(`fuelup-sync-key:${normalized}`);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+  return { normalized, syncId, key };
+}
+
+async function encryptCloudState(code) {
+  const { normalized, syncId, key } = await deriveSyncIdentity(code);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(JSON.stringify(state));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+  return {
+    normalized,
+    syncId,
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(new Uint8Array(encrypted)),
+  };
+}
+
+async function decryptCloudState(payload, code) {
+  const { key } = await deriveSyncIdentity(code);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: base64ToBytes(payload.iv) },
+    key,
+    base64ToBytes(payload.ciphertext)
+  );
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+async function cloudRpc(functionName, payload) {
+  const response = await fetch(
+    `${CLOUD_SYNC_CONFIG.url}/rest/v1/rpc/${functionName}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: CLOUD_SYNC_CONFIG.publishableKey,
+        Authorization: `Bearer ${CLOUD_SYNC_CONFIG.publishableKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+  const text = await response.text();
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = null;
+  }
+  if (!response.ok) {
+    throw new Error(body?.message || text.slice(0, 180) || "云端同步请求失败");
+  }
+  return body;
+}
+
+async function pullCloudPayload(codeInput) {
+  const { normalized, syncId } = await deriveSyncIdentity(codeInput);
+  const payload = await cloudRpc("sync_pull_vault", { p_sync_id: syncId });
+  return {
+    normalized,
+    syncId,
+    payload: payload && !Array.isArray(payload) ? payload : null,
+  };
+}
+
+async function pushCloudState({ expectedVersion, codeInput = cloudSyncMeta?.code } = {}) {
+  if (!codeInput || syncBusy || syncApplyingRemote) return;
+  syncBusy = true;
+  setSyncVisual("busy", "正在上传到云端");
+  try {
+    const encrypted = await encryptCloudState(codeInput);
+    const result = await cloudRpc("sync_push_vault", {
+      p_sync_id: encrypted.syncId,
+      p_ciphertext: encrypted.ciphertext,
+      p_iv: encrypted.iv,
+      p_expected_version:
+        expectedVersion ?? cloudSyncMeta?.version ?? 0,
+    });
+    if (result?.conflict) {
+      cloudSyncMeta = {
+        ...cloudSyncMeta,
+        code: encrypted.normalized,
+        syncId: encrypted.syncId,
+        dirty: true,
+        conflict: true,
+      };
+      saveCloudSyncMeta();
+      setSyncVisual("error", "另有设备更新了云端，需要选择同步方向");
+      elements.syncConflictPanel.hidden = false;
+      renderSyncDialog();
+      return false;
+    }
+
+    cloudSyncMeta = {
+      code: encrypted.normalized,
+      syncId: encrypted.syncId,
+      version: Number(result?.version || (cloudSyncMeta?.version || 0) + 1),
+      lastSyncedAt: new Date().toISOString(),
+      dirty: false,
+      conflict: false,
+    };
+    saveCloudSyncMeta();
+    setSyncVisual("ready", "本机数据已同步");
+    elements.syncConflictPanel.hidden = true;
+    renderSyncDialog();
+    return true;
+  } catch (error) {
+    setSyncVisual("error", `同步失败：${error.message}`);
+    return false;
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function applyCloudState(payload, code, version, { ask = true } = {}) {
+  if (ask) {
+    const confirmed = window.confirm(
+      "从云端恢复会用云端记录覆盖当前浏览器的数据。当前数据会保留一份本地备份，是否继续？"
+    );
+    if (!confirmed) return false;
+  }
+
+  const restored = await decryptCloudState(payload, code);
+  if (!restored || !Array.isArray(restored.products) || !Array.isArray(restored.entries)) {
+    throw new Error("云端数据格式不正确。");
+  }
+  window.localStorage.setItem("fuelup-sync-backup", JSON.stringify(state));
+  syncApplyingRemote = true;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+  const { syncId } = await deriveSyncIdentity(code);
+  cloudSyncMeta = {
+    code: normalizeSyncCode(code),
+    syncId,
+    version,
+    lastSyncedAt: new Date().toISOString(),
+    dirty: false,
+    conflict: false,
+  };
+  saveCloudSyncMeta();
+  window.location.reload();
+  return true;
+}
+
+function scheduleCloudPush() {
+  if (
+    !cloudSyncMeta ||
+    cloudSyncMeta.conflict ||
+    syncApplyingRemote ||
+    !window.FUELUP_CLOUD_INITIALIZED
+  ) {
+    return;
+  }
+  cloudSyncMeta.dirty = true;
+  saveCloudSyncMeta();
+  setSyncVisual("busy", "等待同步本机修改");
+  window.clearTimeout(syncPushTimer);
+  syncPushTimer = window.setTimeout(() => {
+    pushCloudState().catch(() => {});
+  }, 1400);
+}
+
+function setSyncVisual(mode, message) {
+  if (!elements.syncButton) return;
+  elements.syncButton.classList.toggle("is-ready", mode === "ready");
+  elements.syncButton.classList.toggle("is-busy", mode === "busy");
+  elements.syncButton.classList.toggle("is-error", mode === "error");
+  elements.syncButton.title = message;
+  elements.syncActiveStatus.textContent = message;
+  elements.syncActiveTitle.textContent =
+    mode === "ready" ? "云端同步已启用" : mode === "busy" ? "正在同步" : mode === "error" ? "同步需要处理" : "设备同步";
+  elements.syncActiveDot.className = "";
+  elements.syncActiveStatus.parentElement.classList.toggle("is-ready", mode === "ready");
+  elements.syncActiveStatus.parentElement.classList.toggle("is-error", mode === "error");
+}
+
+function renderSyncDialog() {
+  const active = Boolean(cloudSyncMeta);
+  elements.syncSetupView.hidden = active;
+  elements.syncActiveView.hidden = !active;
+  elements.syncError.classList.remove("is-visible");
+  if (!active) {
+    elements.syncButton.classList.remove("is-ready", "is-busy", "is-error");
+    elements.syncButton.title = "设备同步未启用";
+    return;
+  }
+
+  elements.syncCodeDisplay.value = displaySyncCode(cloudSyncMeta.code);
+  elements.syncConflictPanel.hidden = !cloudSyncMeta.conflict;
+  const lastSync = cloudSyncMeta.lastSyncedAt
+    ? new Date(cloudSyncMeta.lastSyncedAt).toLocaleString("zh-CN")
+    : "尚未完成";
+  setSyncVisual(
+    cloudSyncMeta.dirty ? "busy" : "ready",
+    cloudSyncMeta.dirty ? "本机有尚未同步的修改" : `最近同步：${lastSync}`
+  );
+}
+
+async function createCloudSync() {
+  if (cloudSyncMeta) return;
+  const code = generateSyncCode();
+  const { syncId } = await deriveSyncIdentity(code);
+  cloudSyncMeta = {
+    code,
+    syncId,
+    version: 0,
+    lastSyncedAt: "",
+    dirty: true,
+    conflict: false,
+  };
+  saveCloudSyncMeta();
+  renderSyncDialog();
+  const ok = await pushCloudState({ expectedVersion: 0, codeInput: code });
+  if (ok) showToast("同步码已创建，云端数据已上传");
+}
+
+async function connectCloudSync(form) {
+  const code = normalizeSyncCode(form.elements.syncCode.value);
+  if (code.length !== 32) {
+    elements.syncError.textContent = "同步码无效，请粘贴完整的 32 位同步码。";
+    elements.syncError.classList.add("is-visible");
+    return;
+  }
+
+  elements.syncError.classList.remove("is-visible");
+  setSyncVisual("busy", "正在查找云端记录");
+  try {
+    const remote = await pullCloudPayload(code);
+    if (remote.payload) {
+      await applyCloudState(remote.payload, code, remote.payload.version, { ask: true });
+      return;
+    }
+
+    if (!window.confirm("没有找到这个同步码的云端记录。要用当前设备的资料创建同步吗？")) {
+      setSyncVisual("idle", "");
+      return;
+    }
+    cloudSyncMeta = {
+      code,
+      syncId: remote.syncId,
+      version: 0,
+      lastSyncedAt: "",
+      dirty: true,
+      conflict: false,
+    };
+    saveCloudSyncMeta();
+    renderSyncDialog();
+    const ok = await pushCloudState({ expectedVersion: 0, codeInput: code });
+    if (ok) showToast("已使用该同步码连接云端");
+  } catch (error) {
+    elements.syncError.textContent = `连接失败：${error.message}`;
+    elements.syncError.classList.add("is-visible");
+    setSyncVisual("error", "无法连接云端同步");
+  }
+}
+
+async function pullCloudNow({ ask = true } = {}) {
+  if (!cloudSyncMeta || syncBusy || syncApplyingRemote) return false;
+  syncBusy = true;
+  setSyncVisual("busy", "正在检查云端更新");
+  try {
+    const remote = await pullCloudPayload(cloudSyncMeta.code);
+    if (!remote.payload) {
+      cloudSyncMeta.dirty = true;
+      saveCloudSyncMeta();
+      setSyncVisual("error", "云端还没有记录，请先上传本机数据");
+      return false;
+    }
+    if (remote.payload.version <= cloudSyncMeta.version) {
+      cloudSyncMeta.dirty = false;
+      cloudSyncMeta.conflict = false;
+      cloudSyncMeta.lastSyncedAt = new Date().toISOString();
+      saveCloudSyncMeta();
+      setSyncVisual("ready", "已经是最新数据");
+      renderSyncDialog();
+      if (ask) showToast("云端没有更新的数据");
+      return false;
+    }
+    return await applyCloudState(
+      remote.payload,
+      cloudSyncMeta.code,
+      remote.payload.version,
+      { ask }
+    );
+  } catch (error) {
+    elements.syncError.textContent = `读取云端失败：${error.message}`;
+    elements.syncError.classList.add("is-visible");
+    setSyncVisual("error", "读取云端失败");
+    return false;
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function forceCloudOverwrite() {
+  if (!cloudSyncMeta) return;
+  const confirmed = window.confirm(
+    "这会使用当前设备的记录覆盖云端版本，其他设备尚未上传的修改可能丢失。是否继续？"
+  );
+  if (!confirmed) return;
+  try {
+    const remote = await pullCloudPayload(cloudSyncMeta.code);
+    const version = remote.payload?.version || 0;
+    const ok = await pushCloudState({ expectedVersion: version });
+    if (ok) {
+      cloudSyncMeta.conflict = false;
+      saveCloudSyncMeta();
+      renderSyncDialog();
+      showToast("已使用本机数据覆盖云端");
+    }
+  } catch (error) {
+    elements.syncError.textContent = `覆盖失败：${error.message}`;
+    elements.syncError.classList.add("is-visible");
+  }
+}
+
+async function copySyncCode() {
+  if (!cloudSyncMeta) return;
+  const code = displaySyncCode(cloudSyncMeta.code);
+  try {
+    await navigator.clipboard.writeText(code);
+  } catch {
+    elements.syncCodeDisplay.focus();
+    elements.syncCodeDisplay.select();
+    document.execCommand("copy");
+  }
+  showToast("同步码已复制");
+}
+
+function openSyncDialog() {
+  renderSyncDialog();
+  openDialog(elements.syncDialog);
+}
+
+async function initializeCloudSync() {
+  window.FUELUP_CLOUD_INITIALIZED = true;
+  if (!cloudSyncMeta) {
+    elements.syncButton.title = "设备同步未启用";
+    return;
+  }
+  elements.syncButton.title = cloudSyncMeta.dirty ? "正在同步本机修改" : "云端同步已启用";
+  if (cloudSyncMeta.dirty) {
+    await pushCloudState();
+  } else {
+    await pullCloudNow({ ask: false });
+  }
+}
+
+async function checkCloudForUpdates() {
+  if (!cloudSyncMeta || cloudSyncMeta.dirty || syncBusy || syncApplyingRemote) return;
+  await pullCloudNow({ ask: false });
+}
+
 function persistState() {
   try {
     syncTodayRecord();
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    scheduleCloudPush();
   } catch (error) {
     console.warn("本地数据保存失败。", error);
     showToast("浏览器未能保存数据，请检查隐私设置");
@@ -2268,6 +2716,34 @@ elements.recordContent.addEventListener("submit", (event) => {
 
 elements.recordExportButton.addEventListener("click", exportRecords);
 
+// Cloud sync controls
+elements.syncButton.addEventListener("click", openSyncDialog);
+elements.createSyncButton.addEventListener("click", createCloudSync);
+elements.connectSyncForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  connectCloudSync(elements.connectSyncForm);
+});
+elements.copySyncCodeButton.addEventListener("click", copySyncCode);
+elements.syncUploadButton.addEventListener("click", async () => {
+  const ok = await pushCloudState();
+  if (ok) showToast("本机数据已上传");
+});
+elements.syncPullButton.addEventListener("click", () => pullCloudNow({ ask: true }));
+elements.forceSyncButton.addEventListener("click", forceCloudOverwrite);
+elements.disconnectSyncButton.addEventListener("click", () => {
+  if (!window.confirm("停止同步不会删除数据，但以后不会再自动上传或下载。继续吗？")) return;
+  cloudSyncMeta = null;
+  saveCloudSyncMeta();
+  renderSyncDialog();
+  showToast("已停止设备同步");
+});
+window.addEventListener("focus", () => {
+  if (document.visibilityState === "visible") checkCloudForUpdates();
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") checkCloudForUpdates();
+});
+
 // Product library controls
 elements.productSearch.addEventListener("input", renderProducts);
 
@@ -2379,3 +2855,4 @@ syncWorkoutInputs();
 setDateLabel();
 syncCategoryChips();
 renderAll();
+initializeCloudSync();

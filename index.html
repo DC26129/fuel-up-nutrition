@@ -38,6 +38,13 @@
       <symbol id="icon-edit" viewBox="0 0 24 24">
         <path d="m14.5 5.5 4 4M5 19l2.3-5.1L16.6 4.6a1.4 1.4 0 0 1 2 0l.8.8a1.4 1.4 0 0 1 0 2L10.1 16.7 5 19Z" />
       </symbol>
+      <symbol id="icon-cloud" viewBox="0 0 24 24">
+        <path d="M7.2 18.2h10.1a3.7 3.7 0 0 0 .5-7.4 5.7 5.7 0 0 0-10.8-1.3 4.4 4.4 0 0 0 .2 8.7Z" />
+        <path d="m9.2 13.8 1.9 1.9 3.8-4" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 8a8 8 0 1 0 1 6M20 3v5h-5" />
+      </symbol>
       <symbol id="icon-arrow" viewBox="0 0 24 24">
         <path d="M5 12h14M13 6l6 6-6 6" />
       </symbol>
@@ -65,6 +72,11 @@
           <span class="save-dot"></span>
           自动保存
         </span>
+        <button class="sync-button" id="syncButton" type="button" aria-label="设备同步">
+          <svg><use href="#icon-cloud"></use></svg>
+          <span>同步</span>
+          <i class="sync-dot"></i>
+        </button>
         <button class="icon-button" id="targetSettingsButton" type="button" aria-label="设置营养目标">
           <svg><use href="#icon-settings"></use></svg>
         </button>
@@ -612,6 +624,96 @@
             保存目标
           </button>
         </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="syncDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>DEVICE SYNC</p>
+          <h2>设备同步</h2>
+          <span>电脑和手机使用同一个同步码共享记录。云端只保存加密后的数据。</span>
+        </div>
+
+        <div id="syncSetupView">
+          <div class="sync-option-card sync-option-card--create">
+            <span class="sync-option-icon"><svg><use href="#icon-cloud"></use></svg></span>
+            <div>
+              <h3>在这台设备创建同步码</h3>
+              <p>把当前电脑上的商品、饮食、晨重和 AI 建议上传到私有云端。</p>
+            </div>
+            <button id="createSyncButton" type="button">创建同步码</button>
+          </div>
+
+          <div class="sync-or"><span>或者连接已有同步</span></div>
+
+          <form id="connectSyncForm" class="connect-sync-form">
+            <label class="form-field form-field--full">
+              <span>输入另一台设备的同步码</span>
+              <input
+                name="syncCode"
+                type="text"
+                placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                autocomplete="off"
+                spellcheck="false"
+                required
+              />
+            </label>
+            <button class="sheet-primary-button" type="submit">
+              连接并恢复云端数据
+            </button>
+          </form>
+        </div>
+
+        <div id="syncActiveView" hidden>
+          <div class="sync-active-status">
+            <span class="sync-active-icon"><svg><use href="#icon-cloud"></use></svg></span>
+            <div>
+              <strong id="syncActiveTitle">云端同步已启用</strong>
+              <p id="syncActiveStatus">正在检查云端数据</p>
+            </div>
+            <i id="syncActiveDot"></i>
+          </div>
+
+          <label class="sync-code-field">
+            <span>同步码 · 在另一台设备输入相同内容</span>
+            <div>
+              <input id="syncCodeDisplay" type="text" readonly />
+              <button id="copySyncCodeButton" type="button">复制</button>
+            </div>
+          </label>
+
+          <div class="sync-manual-actions">
+            <button id="syncUploadButton" type="button">
+              <svg><use href="#icon-cloud"></use></svg>
+              上传本机数据
+            </button>
+            <button id="syncPullButton" type="button">
+              <svg><use href="#icon-refresh"></use></svg>
+              从云端更新
+            </button>
+          </div>
+
+          <div class="sync-conflict" id="syncConflictPanel" hidden>
+            <strong>另一台设备已有更新的数据</strong>
+            <p>为避免丢失记录，请选择从云端恢复，或明确使用本机数据覆盖云端。</p>
+            <button id="forceSyncButton" type="button">用本机数据覆盖云端</button>
+          </div>
+
+          <button class="disconnect-sync-button" id="disconnectSyncButton" type="button">
+            停止这台设备与云端同步
+          </button>
+        </div>
+
+        <div class="form-error" id="syncError" role="alert"></div>
+        <p class="sync-security-note">
+          数据使用同步码派生的 AES-GCM 密钥加密。同步码丢失后无法恢复云端内容，请妥善保存。
+        </p>
       </div>
     </dialog>
 

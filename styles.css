@@ -196,6 +196,64 @@ svg {
   box-shadow: 0 0 0 4px rgba(105, 198, 90, 0.12);
 }
 
+.sync-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(18, 24, 63, 0.08);
+  border-radius: 99px;
+}
+
+.sync-button:hover {
+  background: var(--white);
+}
+
+.sync-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  background: #aaa9b9;
+  border-radius: 50%;
+}
+
+.sync-button.is-ready .sync-dot {
+  background: #62b657;
+  box-shadow: 0 0 0 3px rgba(98, 182, 87, 0.11);
+}
+
+.sync-button.is-busy .sync-dot {
+  background: var(--yellow);
+  animation: sync-pulse 1s infinite ease-in-out;
+}
+
+.sync-button.is-error .sync-dot {
+  background: var(--orange);
+}
+
+@keyframes sync-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
 .icon-button,
 .sheet-close {
   display: grid;
@@ -4324,6 +4382,254 @@ svg {
   line-height: 1.5;
 }
 
+.sync-option-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  background: linear-gradient(145deg, #f3ffa1, var(--lime));
+  border: 1px solid rgba(18, 24, 63, 0.06);
+  border-radius: 17px;
+}
+
+.sync-option-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.52);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.sync-option-icon svg,
+.sync-active-icon svg,
+.sync-manual-actions svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.sync-option-card h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.sync-option-card p {
+  margin: 4px 0 0;
+  color: rgba(18, 24, 63, 0.57);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.sync-option-card > button {
+  padding: 9px 12px;
+  color: var(--white);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  background: var(--ink);
+  border: 0;
+  border-radius: 99px;
+}
+
+.sync-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 19px 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.sync-or::before,
+.sync-or::after {
+  height: 1px;
+  flex: 1;
+  background: rgba(18, 24, 63, 0.09);
+  content: "";
+}
+
+.connect-sync-form {
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(18, 24, 63, 0.07);
+  border-radius: 16px;
+}
+
+.sync-active-status {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  background: #f4f1ff;
+  border: 1px solid rgba(185, 165, 255, 0.16);
+  border-radius: 15px;
+}
+
+.sync-active-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 37px;
+  height: 37px;
+  color: var(--ink);
+  background: var(--purple-light);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.sync-active-status > div {
+  flex: 1;
+}
+
+.sync-active-status strong {
+  display: block;
+  font-size: 11px;
+}
+
+.sync-active-status p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.sync-active-status > i {
+  width: 8px;
+  height: 8px;
+  background: var(--yellow);
+  border-radius: 50%;
+}
+
+.sync-active-status.is-ready > i {
+  background: #64b657;
+}
+
+.sync-active-status.is-error > i {
+  background: var(--orange);
+}
+
+.sync-code-field {
+  display: block;
+  margin-top: 14px;
+}
+
+.sync-code-field > span {
+  display: block;
+  margin: 0 0 6px 1px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.sync-code-field > div {
+  display: flex;
+  gap: 7px;
+}
+
+.sync-code-field input {
+  min-width: 0;
+  flex: 1;
+  height: 40px;
+  padding: 0 11px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid rgba(18, 24, 63, 0.08);
+  border-radius: 10px;
+  font-family: var(--font-numeric);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.sync-code-field button {
+  padding: 0 12px;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  background: var(--purple-light);
+  border: 0;
+  border-radius: 10px;
+}
+
+.sync-manual-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.sync-manual-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  background: var(--white);
+  border: 1px solid rgba(18, 24, 63, 0.08);
+  border-radius: 11px;
+}
+
+.sync-manual-actions button:hover {
+  background: #f7f5ff;
+}
+
+.sync-conflict {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff4da;
+  border: 1px solid rgba(180, 121, 22, 0.13);
+  border-radius: 12px;
+}
+
+.sync-conflict strong {
+  font-size: 10px;
+}
+
+.sync-conflict p {
+  margin: 4px 0 8px;
+  color: #806b43;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.sync-conflict button {
+  padding: 7px 9px;
+  color: #8b382b;
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+  background: #fff1ec;
+  border: 1px solid rgba(139, 56, 43, 0.12);
+  border-radius: 8px;
+}
+
+.disconnect-sync-button {
+  margin-top: 13px;
+  padding: 5px 0;
+  color: #a04a3e;
+  font-size: 8px;
+  font-weight: 650;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.sync-security-note {
+  margin: 16px 2px 0;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.55;
+}
+
 .target-grid {
   gap: 2px 12px;
   margin-bottom: 18px;
@@ -4484,6 +4790,16 @@ svg {
 
   .brand-copy small,
   .save-status {
+    display: none;
+  }
+
+  .sync-button {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .sync-button > span {
     display: none;
   }
 
@@ -4966,6 +5282,15 @@ svg {
 
   .profile-workout-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sync-option-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .sync-option-card > button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
