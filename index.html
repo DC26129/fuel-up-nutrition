@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#eeecfb" />
+    <meta
+      name="description"
+      content="为增肌与减脂设计的每日营养计算器，可添加商品并计算热量、蛋白质、碳水与脂肪。"
+    />
+    <title>FUEL/UP 营养引擎</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg class="svg-sprite" aria-hidden="true">
+      <symbol id="icon-spark" viewBox="0 0 24 24">
+        <path d="M12 1.8c.5 5.7 4.5 9.7 10.2 10.2-5.7.5-9.7 4.5-10.2 10.2C11.5 16.5 7.5 12.5 1.8 12 7.5 11.5 11.5 7.5 12 1.8Z" />
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle cx="10.7" cy="10.7" r="6.4" />
+        <path d="m15.5 15.5 4.3 4.3" />
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="icon-minus" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M18 6 6 18" />
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6" />
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path d="M4 7h16M9 7V4h6v3M6.5 7l.8 13h9.4l.8-13M10 11v5M14 11v5" />
+      </symbol>
+      <symbol id="icon-edit" viewBox="0 0 24 24">
+        <path d="m14.5 5.5 4 4M5 19l2.3-5.1L16.6 4.6a1.4 1.4 0 0 1 2 0l.8.8a1.4 1.4 0 0 1 0 2L10.1 16.7 5 19Z" />
+      </symbol>
+      <symbol id="icon-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14M13 6l6 6-6 6" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m5 12 4.5 4.5L19 6.5" />
+      </symbol>
+    </svg>
+
+    <div class="page-glow page-glow--one"></div>
+    <div class="page-glow page-glow--two"></div>
+
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="FUEL UP 营养引擎首页">
+        <span class="brand-mark">
+          <svg><use href="#icon-spark"></use></svg>
+        </span>
+        <span class="brand-copy">
+          <strong>FUEL<span>/</span>UP</strong>
+          <small>营养引擎</small>
+        </span>
+      </a>
+
+      <div class="header-actions">
+        <span class="save-status">
+          <span class="save-dot"></span>
+          自动保存
+        </span>
+        <button class="icon-button" id="targetSettingsButton" type="button" aria-label="设置营养目标">
+          <svg><use href="#icon-settings"></use></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="intro-section" aria-labelledby="pageTitle">
+        <div class="intro-copy">
+          <p class="eyebrow"><span>DAILY NUTRITION</span><span id="dateLabel"></span></p>
+          <h1 id="pageTitle">今天，<em>吃得有数。</em></h1>
+          <p class="intro-text">把每一口补给变成看得见的数据，稳稳靠近你的目标。</p>
+        </div>
+
+        <div class="goal-picker" role="group" aria-label="选择饮食目标">
+          <button class="goal-button is-active" type="button" data-goal="cut">
+            <span class="goal-symbol">↓</span>
+            减脂
+          </button>
+          <button class="goal-button" type="button" data-goal="bulk">
+            <span class="goal-symbol">↑</span>
+            增肌
+          </button>
+          <button class="goal-button" type="button" data-goal="maintain">
+            <span class="goal-symbol">↔</span>
+            维持
+          </button>
+        </div>
+      </section>
+
+      <section class="dashboard-card" aria-labelledby="dashboardTitle">
+        <div class="dashboard-topline">
+          <span class="dashboard-mode"><i></i> DAILY FUEL</span>
+          <span class="dashboard-goal" id="dashboardGoal">减脂模式 · READY</span>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dash-stat dash-stat--left">
+            <p class="dash-label">还可摄入</p>
+            <p class="dash-value"><span id="remainingCalories">1,800</span><small>kcal</small></p>
+            <div class="mini-track"><span id="calorieTrack"></span></div>
+            <p class="dash-note">目标 <strong id="targetCaloriesLabel">1,800</strong> kcal</p>
+          </div>
+
+          <div class="energy-visual" id="energyVisual">
+            <div class="energy-core">
+              <span class="energy-kicker">TODAY</span>
+              <strong id="consumedCalories">0</strong>
+              <span class="energy-unit">KCAL 已摄入</span>
+            </div>
+            <span class="orbit-dot"></span>
+          </div>
+
+          <div class="dash-stat dash-stat--right">
+            <p class="dash-label">蛋白质进度</p>
+            <p class="dash-value"><span id="proteinDashboard">0</span><small>g</small></p>
+            <div class="mini-track mini-track--purple"><span id="proteinTrack"></span></div>
+            <p class="dash-note">还差 <strong id="remainingProtein">130</strong> g</p>
+          </div>
+        </div>
+
+        <div class="dashboard-message">
+          <span class="message-icon"><svg><use href="#icon-spark"></use></svg></span>
+          <p id="coachMessage">从补给站选择第一份食物，开始今天的营养记录。</p>
+          <a href="#foodLibrary" class="dash-link">去添加 <svg><use href="#icon-arrow"></use></svg></a>
+        </div>
+      </section>
+
+      <section class="macro-grid" aria-label="营养素摄入概览">
+        <article class="macro-card macro-card--lime">
+          <div class="macro-heading">
+            <span class="macro-icon">P</span>
+            <span>蛋白质</span>
+            <strong id="proteinPercent">0%</strong>
+          </div>
+          <p class="macro-value"><span id="proteinTotal">0</span><small>/ <span id="proteinTarget">130</span> g</small></p>
+          <div class="macro-track"><span id="proteinBar"></span></div>
+        </article>
+
+        <article class="macro-card macro-card--purple">
+          <div class="macro-heading">
+            <span class="macro-icon">C</span>
+            <span>碳水</span>
+            <strong id="carbPercent">0%</strong>
+          </div>
+          <p class="macro-value"><span id="carbTotal">0</span><small>/ <span id="carbTarget">170</span> g</small></p>
+          <div class="macro-track"><span id="carbBar"></span></div>
+        </article>
+
+        <article class="macro-card macro-card--orange">
+          <div class="macro-heading">
+            <span class="macro-icon">F</span>
+            <span>脂肪</span>
+            <strong id="fatPercent">0%</strong>
+          </div>
+          <p class="macro-value"><span id="fatTotal">0</span><small>/ <span id="fatTarget">55</span> g</small></p>
+          <div class="macro-track"><span id="fatBar"></span></div>
+        </article>
+
+        <article class="macro-card macro-card--cloud">
+          <div class="macro-heading">
+            <span class="macro-icon">Fi</span>
+            <span>膳食纤维</span>
+            <strong id="fiberPercent">0%</strong>
+          </div>
+          <p class="macro-value"><span id="fiberTotal">0</span><small>/ <span id="fiberTarget">25</span> g</small></p>
+          <div class="macro-track"><span id="fiberBar"></span></div>
+        </article>
+      </section>
+
+      <section class="coach-panel" id="aiCoach" aria-labelledby="aiCoachTitle">
+        <div class="coach-panel-hero">
+          <div class="coach-panel-topline">
+            <span><i></i> DEEPSEEK COACH</span>
+            <div>
+              <span class="api-status" id="apiStatus"><i></i> API 未配置</span>
+              <button class="icon-button ai-settings-button" id="aiSettingsButton" type="button" aria-label="配置 DeepSeek">
+                <svg><use href="#icon-settings"></use></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="coach-hero-main">
+            <div class="coach-verdict">
+              <p>AI 今日判断</p>
+              <h2 id="aiCoachTitle">先填写身体数据，<br /><em>让建议跟着你今天的状态走。</em></h2>
+              <span id="aiVerdictSummary">DeepSeek 会结合当前摄入、身体档案和训练记录，生成更有针对性的营养建议。</span>
+            </div>
+            <div class="coach-fuel-orbit" id="aiFuelOrbit">
+              <span>DAILY FUEL</span>
+              <strong id="aiDailyFuelPercent">0<small>%</small></strong>
+              <em id="aiDailyFuelValue">1,800 kcal</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="coach-profile-bar">
+          <div class="coach-profile-main">
+            <span class="coach-profile-avatar" id="profileAvatar">?</span>
+            <div>
+              <strong id="profileSummary">尚未填写身体数据</strong>
+              <p id="metabolismSummary">填写后可估算基础代谢和每日目标</p>
+            </div>
+          </div>
+          <span class="coach-profile-divider"></span>
+          <div class="coach-training-summary">
+            <span class="coach-training-symbol">↗</span>
+            <div>
+              <strong id="trainingSummary">无训练</strong>
+              <p id="trainingBurnSummary">今日训练消耗 0 kcal</p>
+            </div>
+          </div>
+          <button id="editCoachSettingsButton" type="button">
+            <svg><use href="#icon-edit"></use></svg>
+            编辑身体与训练
+          </button>
+        </div>
+
+        <div class="coach-panel-body">
+          <div class="coach-metric-grid">
+            <article class="coach-metric coach-metric--lime">
+              <div class="coach-metric-head"><span>热量剩余</span><b id="aiCaloriePercent">0%</b></div>
+              <p><strong id="aiCaloriesRemaining">0</strong><small>kcal</small></p>
+              <div class="coach-metric-track"><i id="aiCalorieBar"></i></div>
+              <em id="aiCalorieNote">已摄入 0 / Daily Fuel 1,800</em>
+            </article>
+            <article class="coach-metric coach-metric--purple">
+              <div class="coach-metric-head"><span>蛋白质缺口</span><b id="aiProteinPercent">0%</b></div>
+              <p><strong id="aiProteinRemaining">0</strong><small>g</small></p>
+              <div class="coach-metric-track"><i id="aiProteinBar"></i></div>
+              <em id="aiProteinNote">今日蛋白质目标待计算</em>
+            </article>
+            <article class="coach-metric coach-metric--orange">
+              <div class="coach-metric-head"><span>今日训练</span><b id="aiTrainingBadge">REST</b></div>
+              <p><strong id="exerciseBurnValue">0</strong><small>kcal</small></p>
+              <div class="coach-training-bars"><i></i><i></i><i></i><i></i><i></i></div>
+              <em id="aiTrainingNote">无训练</em>
+            </article>
+          </div>
+
+          <div class="coach-work-grid">
+            <section class="coach-action-board">
+              <div class="coach-board-heading">
+                <div>
+                  <span>COACH NOTES</span>
+                  <h3>接下来这样做</h3>
+                </div>
+                <em id="aiActionCount">等待生成</em>
+              </div>
+              <div class="coach-action-list" id="aiActionList" aria-live="polite">
+                <div class="coach-action-empty">
+                  <span class="coach-action-empty-icon"><svg><use href="#icon-spark"></use></svg></span>
+                  <div>
+                    <strong>生成今日建议</strong>
+                    <p>AI 判断和行动建议会显示在这里。</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside class="coach-focus-card">
+              <div class="coach-focus-heading">
+                <span>TODAY'S FOCUS</span>
+                <i></i>
+              </div>
+              <h3 id="aiFocusTitle">让今天的营养<br />更接近目标。</h3>
+              <div class="coach-focus-ring" id="aiFocusRing">
+                <div>
+                  <strong id="aiFocusPercent">0%</strong>
+                  <span>Daily Fuel</span>
+                </div>
+              </div>
+              <div class="coach-focus-tags" id="aiFocusTags">
+                <span>记录饮食</span>
+                <span>填写身体数据</span>
+              </div>
+              <p id="aiFocusNote">完成记录后，这里会展示今日最值得关注的重点。</p>
+            </aside>
+          </div>
+
+          <footer class="coach-panel-footer">
+            <button class="ai-generate-button" id="generateAdviceButton" type="button">
+              <svg><use href="#icon-spark"></use></svg>
+              <span>生成今日建议</span>
+            </button>
+            <span>建议会结合补给站现有商品</span>
+            <span class="ai-advice-stale" id="aiStaleNotice" hidden>摄入、目标或训练记录已变化，建议重新生成。</span>
+          </footer>
+        </div>
+      </section>
+
+      <section class="plate-section" aria-labelledby="plateTitle">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">TODAY'S PLATE</p>
+            <h2 id="plateTitle">今日餐盘</h2>
+          </div>
+          <div class="section-actions">
+            <span class="item-count" id="mealCount">0 项</span>
+            <button class="text-button" id="clearMealsButton" type="button">清空</button>
+          </div>
+        </div>
+
+        <div class="plate-card">
+          <div class="plate-summary">
+            <span class="plate-orb"><svg><use href="#icon-spark"></use></svg></span>
+            <div>
+              <p>当前搭配</p>
+              <strong><span id="plateCalories">0</span> kcal</strong>
+            </div>
+            <span class="plate-sodium">钠 <strong id="sodiumTotal">0</strong> mg</span>
+          </div>
+          <div class="meal-list" id="mealList"></div>
+          <div class="empty-meals" id="emptyMeals">
+            <span class="empty-meals-art">
+              <i></i><i></i><i></i>
+            </span>
+            <div>
+              <strong>餐盘还是空的</strong>
+              <p>从下方补给站挑一份食物，营养数据会自动汇总。</p>
+            </div>
+            <a href="#foodLibrary">去挑选</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="records-section" id="records" aria-labelledby="recordsTitle">
+        <div class="section-heading records-heading">
+          <div>
+            <p class="section-kicker">PROGRESS LOG</p>
+            <h2 id="recordsTitle">身体与饮食记录</h2>
+            <p class="section-description">每日自动保存餐盘数据，手动补充晨起体重，用趋势判断真实进展。</p>
+          </div>
+          <div class="record-heading-tools">
+            <button class="record-export-button" id="recordExportButton" type="button">导出 CSV</button>
+            <div class="record-tabs" role="group" aria-label="记录时间范围">
+              <button class="record-tab is-active" type="button" data-record-view="day">日</button>
+              <button class="record-tab" type="button" data-record-view="week">周</button>
+              <button class="record-tab" type="button" data-record-view="month">月</button>
+            </div>
+          </div>
+        </div>
+        <div class="record-content" id="recordContent"></div>
+      </section>
+
+      <section class="library-section" id="foodLibrary" aria-labelledby="libraryTitle">
+        <div class="section-heading library-heading">
+          <div>
+            <p class="section-kicker">FUEL LIBRARY</p>
+            <h2 id="libraryTitle">补给站</h2>
+            <p class="section-description">营养数据按每 100 克换算，点击即可按实际食用量加入餐盘。</p>
+          </div>
+          <button class="primary-button" id="openProductDialogButton" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            增加商品
+          </button>
+        </div>
+
+        <div class="library-tools">
+          <label class="search-field">
+            <svg><use href="#icon-search"></use></svg>
+            <input id="productSearch" type="search" placeholder="搜索商品或品牌" autocomplete="off" />
+          </label>
+          <div class="filter-chips" id="filterChips" role="group" aria-label="商品分类">
+            <button class="filter-chip is-active" type="button" data-category="all">全部</button>
+            <button class="filter-chip" type="button" data-category="蛋白">高蛋白</button>
+            <button class="filter-chip" type="button" data-category="主食">主食</button>
+            <button class="filter-chip" type="button" data-category="蛋类">蛋类</button>
+            <button class="filter-chip" type="button" data-category="我的">我的商品</button>
+          </div>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+        <div class="no-results" id="noResults" hidden>
+          <span>⌁</span>
+          <strong>没有找到商品</strong>
+          <p>换个关键词，或把它添加到你的补给站。</p>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <span class="footer-mark"><svg><use href="#icon-spark"></use></svg> FUEL/UP</span>
+        <p>营养数据来自商品包装标示，热量按 1 kcal = 4.184 kJ 换算。页面数据仅作日常记录参考。</p>
+      </footer>
+    </main>
+
+    <dialog class="sheet" id="portionDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="portion-header">
+          <span class="portion-product-icon" id="portionProductIcon">食</span>
+          <div>
+            <p id="portionBrand">商品</p>
+            <h2 id="portionName">加入今日餐盘</h2>
+          </div>
+        </div>
+
+        <div class="portion-basis" id="portionBasis">每 100 g 营养数据</div>
+
+        <div class="bone-weight-panel" id="boneWeightPanel" hidden>
+          <div class="bone-weight-heading">
+            <span>带骨商品换算</span>
+            <strong id="boneWeightSummary">请输入去骨后可食重量</strong>
+          </div>
+          <label class="bone-gross-control" for="grossPortionGrams">
+            <span>这次带骨总重（可选）</span>
+            <span class="quantity-input">
+              <input id="grossPortionGrams" type="number" min="0" max="5000" step="1" placeholder="0" />
+              <em>g</em>
+            </span>
+          </label>
+          <p>营养只按去骨后的可食重量计算。填写带骨总重后，会同时显示骨头重量与可食率。</p>
+        </div>
+
+        <label class="quantity-control" for="portionGrams">
+          <span id="portionQuantityLabel">实际食用量</span>
+          <span class="quantity-input">
+            <input id="portionGrams" type="number" min="1" max="5000" step="1" value="100" />
+            <em>g</em>
+          </span>
+        </label>
+        <input class="quantity-range" id="portionRange" type="range" min="1" max="500" step="1" value="100" />
+        <div class="quick-amounts" id="quickAmounts">
+          <button type="button" data-multiplier="0.5">0.5 份</button>
+          <button type="button" data-multiplier="1" class="is-active">1 份</button>
+          <button type="button" data-multiplier="1.5">1.5 份</button>
+          <button type="button" data-multiplier="2">2 份</button>
+        </div>
+
+        <div class="portion-preview">
+          <div class="preview-main">
+            <span>本次热量</span>
+            <strong><span id="previewCalories">0</span><small> kcal</small></strong>
+          </div>
+          <div><span>蛋白质</span><strong id="previewProtein">0 g</strong></div>
+          <div><span>碳水</span><strong id="previewCarbs">0 g</strong></div>
+          <div><span>脂肪</span><strong id="previewFat">0 g</strong></div>
+        </div>
+
+        <button class="remove-portion-button" id="removePortionButton" type="button" hidden>
+          <svg><use href="#icon-trash"></use></svg>
+          从今日餐盘中移除
+        </button>
+
+        <button class="sheet-primary-button" id="confirmPortionButton" type="button">
+          <svg><use href="#icon-plus"></use></svg>
+          <span id="confirmPortionLabel">加入今日餐盘</span>
+        </button>
+      </div>
+    </dialog>
+
+    <dialog class="sheet sheet--wide" id="productDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p id="productSheetKicker">NEW PRODUCT</p>
+          <h2 id="productSheetTitle">添加一件商品</h2>
+          <span id="productSheetDescription">照着营养标签填写，之后添加分量时会自动换算。</span>
+        </div>
+
+        <form id="productForm">
+          <div class="form-row">
+            <label class="form-field form-field--grow">
+              <span>商品名称 *</span>
+              <input name="name" type="text" maxlength="40" placeholder="例如：低脂鸡胸肉" required />
+            </label>
+            <label class="form-field">
+              <span>分类</span>
+              <select name="category">
+                <option value="蛋白">高蛋白</option>
+                <option value="主食">主食</option>
+                <option value="蛋类">蛋类</option>
+                <option value="蔬果">蔬果</option>
+                <option value="乳品">乳品</option>
+                <option value="其他">其他</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field form-field--grow">
+              <span>品牌（可选）</span>
+              <input name="brand" type="text" maxlength="30" placeholder="商品品牌" />
+            </label>
+            <label class="form-field">
+              <span>默认份量（g）</span>
+              <input name="servingGrams" type="number" min="1" max="5000" step="1" value="100" required />
+            </label>
+          </div>
+
+          <fieldset class="basis-fieldset">
+            <legend>营养标签的统计基准</legend>
+            <label>
+              <input type="radio" name="basis" value="per100" checked />
+              <span>每 100 g</span>
+            </label>
+            <label>
+              <input type="radio" name="basis" value="perServing" />
+              <span>每 1 份</span>
+            </label>
+          </fieldset>
+
+          <p class="form-hint" id="nutritionBasisHint">请填写包装上“每 100 g”的数值。</p>
+
+          <label class="bone-checkbox">
+            <input name="boneIn" type="checkbox" />
+            <span>
+              <strong>这是带骨商品</strong>
+              <small>加入餐盘时可填写带骨总重，并按去骨后可食重量计算营养。</small>
+            </span>
+          </label>
+
+          <div class="nutrition-form-grid">
+            <label class="form-field">
+              <span>能量 *</span>
+              <span class="input-with-unit">
+                <input name="energy" type="number" min="0" max="99999" step="0.1" placeholder="1543" required />
+                <select name="energyUnit" aria-label="能量单位">
+                  <option value="kj">kJ</option>
+                  <option value="kcal">kcal</option>
+                </select>
+              </span>
+            </label>
+            <label class="form-field">
+              <span>蛋白质（g）*</span>
+              <input name="protein" type="number" min="0" max="1000" step="0.1" placeholder="0" required />
+            </label>
+            <label class="form-field">
+              <span>碳水化合物（g）*</span>
+              <input name="carbs" type="number" min="0" max="1000" step="0.1" placeholder="0" required />
+            </label>
+            <label class="form-field">
+              <span>脂肪（g）*</span>
+              <input name="fat" type="number" min="0" max="1000" step="0.1" placeholder="0" required />
+            </label>
+            <label class="form-field">
+              <span>膳食纤维（g）</span>
+              <input name="fiber" type="number" min="0" max="1000" step="0.1" placeholder="0" />
+            </label>
+            <label class="form-field">
+              <span>糖（g）</span>
+              <input name="sugar" type="number" min="0" max="1000" step="0.1" placeholder="0" />
+            </label>
+            <label class="form-field form-field--full">
+              <span>钠（mg）</span>
+              <input name="sodium" type="number" min="0" max="99999" step="0.1" placeholder="0" />
+            </label>
+          </div>
+
+          <div class="form-error" id="productFormError" role="alert"></div>
+          <button class="sheet-primary-button" type="submit">
+            <svg><use href="#icon-check"></use></svg>
+            <span id="productSubmitLabel">保存到补给站</span>
+          </button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="targetDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>YOUR TARGETS</p>
+          <h2>设置营养目标</h2>
+          <span>切换减脂、增肌或维持会载入预设值，你也可以在这里微调。</span>
+        </div>
+
+        <form id="targetForm">
+          <div class="target-grid">
+            <label class="form-field">
+              <span>每日热量（kcal）</span>
+              <input name="calories" type="number" min="500" max="10000" step="10" required />
+            </label>
+            <label class="form-field">
+              <span>蛋白质（g）</span>
+              <input name="protein" type="number" min="0" max="1000" step="1" required />
+            </label>
+            <label class="form-field">
+              <span>碳水（g）</span>
+              <input name="carbs" type="number" min="0" max="2000" step="1" required />
+            </label>
+            <label class="form-field">
+              <span>脂肪（g）</span>
+              <input name="fat" type="number" min="0" max="1000" step="1" required />
+            </label>
+            <label class="form-field form-field--full">
+              <span>膳食纤维（g）</span>
+              <input name="fiber" type="number" min="0" max="200" step="1" required />
+            </label>
+          </div>
+          <button class="sheet-primary-button" type="submit">
+            <svg><use href="#icon-check"></use></svg>
+            保存目标
+          </button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="profileDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>COACH SETTINGS</p>
+          <h2>身体与今日训练</h2>
+          <span>用于估算基础代谢、训练消耗和 Daily Fuel。所有数据只保存在本地浏览器。</span>
+        </div>
+
+        <form id="profileForm">
+          <div class="form-row">
+            <label class="form-field">
+              <span>性别 *</span>
+              <select name="sex" required>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>年龄 *</span>
+              <input name="age" type="number" min="14" max="100" step="1" placeholder="25" required />
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>身高（cm）*</span>
+              <input name="height" type="number" min="120" max="230" step="0.1" placeholder="175" required />
+            </label>
+            <label class="form-field">
+              <span>体重（kg）*</span>
+              <input name="weight" type="number" min="30" max="300" step="0.1" placeholder="70" required />
+            </label>
+          </div>
+
+          <label class="form-field form-field--full">
+            <span>日常活动水平（不含专门训练）</span>
+            <select name="activity">
+              <option value="1.2">久坐办公，日常走动较少</option>
+              <option value="1.3">轻度活动，经常站立或走动</option>
+              <option value="1.4">中度活动，每天走动较多</option>
+              <option value="1.55">高体力活动或工作量较大</option>
+            </select>
+          </label>
+
+          <label class="form-field form-field--full">
+            <span>手动基础代谢 BMR（kcal）</span>
+            <input name="manualBmr" type="number" min="500" max="5000" step="1" value="1600" />
+          </label>
+          <p class="field-help">当前按 1600 kcal 校准。留空则使用身高、体重和年龄公式估算。</p>
+
+          <div class="profile-workout-block">
+            <div class="profile-workout-heading">
+              <strong>今日训练</strong>
+              <span>仅保留你实际进行的两类训练</span>
+            </div>
+            <div class="profile-workout-grid">
+              <label class="form-field">
+                <span>训练类型</span>
+                <select id="workoutType">
+                  <option value="none">无训练</option>
+                  <option value="incline_walk">爬坡</option>
+                  <option value="strength">力量训练</option>
+                </select>
+              </label>
+              <label class="form-field">
+                <span>时长（分钟）</span>
+                <input id="workoutMinutes" type="number" min="0" max="600" step="5" value="0" />
+              </label>
+              <label class="form-field">
+                <span>强度</span>
+                <select id="workoutIntensity">
+                  <option value="light">轻松</option>
+                  <option value="moderate" selected>适中</option>
+                  <option value="hard">高强度</option>
+                </select>
+              </label>
+              <label class="form-field form-field--full">
+                <span>训练备注（可选）</span>
+                <input
+                  class="workout-note"
+                  id="workoutNote"
+                  type="text"
+                  maxlength="80"
+                  placeholder="例如：下肢力量训练、组数较多"
+                />
+              </label>
+            </div>
+          </div>
+
+          <label class="auto-target-toggle">
+            <input name="autoTargets" type="checkbox" checked />
+            <span>
+              <strong>自动更新 Daily Fuel</strong>
+              <small>保存身体数据或更新训练后，重新计算热量和三大营养素目标。</small>
+            </span>
+          </label>
+
+          <div class="form-error" id="profileFormError" role="alert"></div>
+          <button class="sheet-primary-button" type="submit">
+            <svg><use href="#icon-check"></use></svg>
+            保存身体数据与训练
+          </button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="aiSettingsDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>DEEPSEEK API</p>
+          <h2>连接 DeepSeek</h2>
+          <span>密钥仅保存在当前浏览器。生成建议时，身体数据、饮食数据与训练记录会发送给 DeepSeek。</span>
+        </div>
+
+        <form id="aiSettingsForm">
+          <label class="form-field form-field--full">
+            <span>API Key *</span>
+            <input
+              name="apiKey"
+              type="password"
+              placeholder="sk-..."
+              autocomplete="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+          <label class="form-field form-field--full">
+            <span>模型</span>
+            <select name="model">
+              <option value="deepseek-chat">DeepSeek Chat · 推荐</option>
+              <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+            </select>
+          </label>
+          <p class="ai-settings-note">
+            API 地址固定为 <strong>https://api.deepseek.com</strong>。本地通过 <code>file://</code> 打开时也可直接调用。
+          </p>
+          <div class="form-error" id="aiSettingsError" role="alert"></div>
+          <button class="sheet-primary-button" id="saveAiSettingsButton" type="submit">
+            <svg><use href="#icon-check"></use></svg>
+            保存并测试连接
+          </button>
+        </form>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

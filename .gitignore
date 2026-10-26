@@ -1,0 +1,5 @@
+.chrome-*/
+*.lnk
+Thumbs.db
+.DS_Store
+__pycache__/
