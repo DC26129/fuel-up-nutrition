@@ -4344,7 +4344,7 @@ svg {
 
 .profile-workout-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 0.9fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 9px;
 }
 
@@ -4355,6 +4355,54 @@ svg {
 .profile-workout-grid .workout-note {
   height: 44px;
   margin-top: 0;
+}
+
+.profile-workout-grid input[type="range"] {
+  height: 28px;
+  padding: 0;
+  accent-color: var(--purple);
+  background: transparent;
+  border: 0;
+}
+
+.profile-workout-grid output {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.workout-estimate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  background: #eeebff;
+  border: 1px solid rgba(185, 165, 255, 0.18);
+  border-radius: 13px;
+}
+
+.workout-estimate > div span {
+  display: block;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.workout-estimate > div strong {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-numeric);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.workout-estimate p {
+  max-width: 250px;
+  margin: 0;
+  color: #716984;
+  font-size: 8px;
+  line-height: 1.45;
+  text-align: right;
 }
 
 .ai-advice-stale {

@@ -925,7 +925,7 @@
         <div class="sheet-title-block">
           <p>TODAY TRAINING</p>
           <h2>记录今日训练</h2>
-          <span>只影响今天。保存后会重新计算今日训练消耗和 Daily Fuel。</span>
+          <span>只影响今天。穿戴设备数据只作参考，最终显示估算范围并重新计算 Daily Fuel。</span>
         </div>
 
         <form id="workoutForm">
@@ -939,17 +939,29 @@
                   <option value="strength">力量训练</option>
                 </select>
               </label>
+              <label class="form-field" id="workoutFocusField">
+                <span>训练部位</span>
+                <select id="workoutFocus">
+                  <option value="upper">上肢</option>
+                  <option value="lower">下肢</option>
+                  <option value="full">全身</option>
+                </select>
+              </label>
               <label class="form-field">
                 <span>时长（分钟）</span>
                 <input id="workoutMinutes" type="number" min="0" max="600" step="5" value="0" />
               </label>
               <label class="form-field">
-                <span>强度</span>
-                <select id="workoutIntensity">
-                  <option value="light">轻松</option>
-                  <option value="moderate" selected>适中</option>
-                  <option value="hard">高强度</option>
-                </select>
+                <span>平均心率（bpm）</span>
+                <input id="workoutHeartRate" type="number" min="30" max="240" step="1" placeholder="可选" />
+              </label>
+              <label class="form-field">
+                <span>手表活动消耗（kcal）</span>
+                <input id="workoutActiveCalories" type="number" min="0" max="5000" step="1" placeholder="可选" />
+              </label>
+              <label class="form-field form-field--full">
+                <span>主观强度 RPE · <output id="workoutRpeValue">6 · 费力</output></span>
+                <input id="workoutRpe" type="range" min="1" max="10" step="1" value="6" />
               </label>
               <label class="form-field form-field--full">
                 <span>训练备注（可选）</span>
@@ -962,6 +974,13 @@
                 />
               </label>
             </div>
+          </div>
+          <div class="workout-estimate" id="workoutEstimate">
+            <div>
+              <span>预计训练额外消耗</span>
+              <strong id="workoutEstimateRange">-- kcal</strong>
+            </div>
+            <p id="workoutEstimateNote">填写训练时长和自感强度后可预览</p>
           </div>
           <button class="sheet-primary-button" type="submit">
             <svg><use href="#icon-check"></use></svg>

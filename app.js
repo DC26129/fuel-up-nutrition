@@ -6,7 +6,7 @@ const CLOUD_SYNC_CONFIG = {
   publishableKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4c2J5bWtmcWdleHlna3Rhb2toIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTc5NjYsImV4cCI6MjEwODU5Mzk2Nn0.JsujQANAdEXqDVeyGQxN6puH155PNt2SyhXzn0vg_Ls",
 };
-const DATA_VERSION = 7;
+const DATA_VERSION = 8;
 
 const GOAL_PRESETS = {
   cut: {
@@ -55,6 +55,12 @@ const INTENSITY_FACTORS = {
   light: 0.85,
   moderate: 1,
   hard: 1.15,
+};
+
+const STRENGTH_FOCUS = {
+  upper: "上肢",
+  lower: "下肢",
+  full: "全身",
 };
 
 const STARTER_PRODUCTS = [
@@ -281,11 +287,18 @@ const elements = {
   profileSummary: document.querySelector("#profileSummary"),
   apiStatus: document.querySelector("#apiStatus"),
   workoutType: document.querySelector("#workoutType"),
+  workoutFocusField: document.querySelector("#workoutFocusField"),
+  workoutFocus: document.querySelector("#workoutFocus"),
   workoutMinutes: document.querySelector("#workoutMinutes"),
-  workoutIntensity: document.querySelector("#workoutIntensity"),
+  workoutHeartRate: document.querySelector("#workoutHeartRate"),
+  workoutActiveCalories: document.querySelector("#workoutActiveCalories"),
+  workoutRpe: document.querySelector("#workoutRpe"),
+  workoutRpeValue: document.querySelector("#workoutRpeValue"),
   workoutNote: document.querySelector("#workoutNote"),
   workoutDialog: document.querySelector("#workoutDialog"),
   workoutForm: document.querySelector("#workoutForm"),
+  workoutEstimateRange: document.querySelector("#workoutEstimateRange"),
+  workoutEstimateNote: document.querySelector("#workoutEstimateNote"),
   aiSettingsButton: document.querySelector("#aiSettingsButton"),
   aiCaloriePercent: document.querySelector("#aiCaloriePercent"),
   aiCaloriesRemaining: document.querySelector("#aiCaloriesRemaining"),
@@ -351,6 +364,10 @@ function createInitialState() {
       minutes: 0,
       intensity: "moderate",
       note: "",
+      rpe: 0,
+      avgHeartRate: null,
+      activeCalories: null,
+      focus: "full",
     },
     workoutDate: formatDateKey(new Date()),
     records: {},
@@ -476,7 +493,16 @@ function normalizeWorkout(workout) {
     : workout?.type === "walking"
       ? "incline_walk"
       : "none";
-  const intensity = INTENSITY_FACTORS[workout?.intensity] ? workout.intensity : "moderate";
+  const legacyIntensity = INTENSITY_FACTORS[workout?.intensity] ? workout.intensity : "moderate";
+  const fallbackRpe = legacyIntensity === "light" ? 4 : legacyIntensity === "hard" ? 8 : 6;
+  const rpe =
+    type === "none"
+      ? 0
+      : Math.min(10, Math.max(1, positiveNumber(workout?.rpe, fallbackRpe)));
+  const intensity = rpe <= 4 ? "light" : rpe >= 8 ? "hard" : "moderate";
+  const heartRate = positiveNumber(workout?.avgHeartRate, 0);
+  const activeCalories = positiveNumber(workout?.activeCalories, 0);
+  const focus = STRENGTH_FOCUS[workout?.focus] ? workout.focus : "full";
   return {
     type,
     minutes:
@@ -485,6 +511,12 @@ function normalizeWorkout(workout) {
         : Math.min(600, Math.max(0, positiveNumber(workout?.minutes, 0))),
     intensity,
     note: type === "none" ? "" : String(workout?.note || "").slice(0, 80),
+    rpe,
+    avgHeartRate:
+      type === "none" || heartRate <= 0 ? null : Math.min(240, Math.round(heartRate)),
+    activeCalories:
+      type === "none" || activeCalories <= 0 ? null : Math.min(5000, Math.round(activeCalories)),
+    focus: type === "strength" ? focus : "full",
   };
 }
 
@@ -515,6 +547,17 @@ function normalizeRecords(records) {
       trainingIntensity: INTENSITY_FACTORS[record.trainingIntensity]
         ? record.trainingIntensity
         : "moderate",
+      trainingRpe: Math.min(10, Math.max(0, positiveNumber(record.trainingRpe, 0))),
+      trainingHeartRate:
+        positiveNumber(record.trainingHeartRate, 0) > 0
+          ? Math.round(positiveNumber(record.trainingHeartRate, 0))
+          : null,
+      trainingActiveCalories:
+        positiveNumber(record.trainingActiveCalories, 0) > 0
+          ? Math.round(positiveNumber(record.trainingActiveCalories, 0))
+          : null,
+      trainingFocus: STRENGTH_FOCUS[record.trainingFocus] ? record.trainingFocus : "full",
+      exerciseBurn: Math.round(positiveNumber(record.exerciseBurn, 0)),
       hasNutrition: Boolean(record.hasNutrition),
       updatedAt: String(record.updatedAt || ""),
     };
@@ -1021,6 +1064,10 @@ function ensureTodayWorkout() {
     minutes: 0,
     intensity: "moderate",
     note: "",
+    rpe: 0,
+    avgHeartRate: null,
+    activeCalories: null,
+    focus: "full",
   };
   return true;
 }
@@ -1119,6 +1166,11 @@ function syncTodayRecord() {
     trainingType: state.workout.type,
     trainingMinutes: state.workout.minutes,
     trainingIntensity: state.workout.intensity,
+    trainingRpe: state.workout.rpe,
+    trainingHeartRate: state.workout.avgHeartRate,
+    trainingActiveCalories: state.workout.activeCalories,
+    trainingFocus: state.workout.focus,
+    exerciseBurn: plan ? Math.round(plan.exerciseBurn) : 0,
     hasNutrition,
     updatedAt: new Date().toISOString(),
   };
@@ -1151,6 +1203,61 @@ function calculateTotals() {
   return totals;
 }
 
+function estimateExerciseBurn(workout = state.workout, profile = state.profile) {
+  if (!profile || !workout || workout.type === "none" || workout.minutes <= 0) {
+    return {
+      burn: 0,
+      low: 0,
+      high: 0,
+      formula: 0,
+      wearable: 0,
+      source: "none",
+    };
+  }
+
+  const hrMax = Math.max(120, 208 - 0.7 * profile.age);
+  const heartRateRatio = workout.avgHeartRate ? workout.avgHeartRate / hrMax : null;
+  const rpe = Math.max(1, workout.rpe || 6);
+  let activeMet;
+
+  if (workout.type === "incline_walk") {
+    activeMet = heartRateRatio
+      ? 5.5 + (heartRateRatio - 0.63) * 18
+      : 3.8 + (rpe - 3) * 0.38;
+    activeMet = Math.min(9, Math.max(3, activeMet));
+  } else {
+    const focusBase = { upper: 5.8, lower: 6.8, full: 7.2 };
+    activeMet = (focusBase[workout.focus] || focusBase.full) + (rpe - 6) * 0.3;
+    if (heartRateRatio) {
+      const heartRateFactor = Math.min(1.08, Math.max(0.92, 1 + (heartRateRatio - 0.62) * 0.25));
+      activeMet *= heartRateFactor;
+    }
+    activeMet = Math.min(10, Math.max(3, activeMet));
+  }
+
+  const formulaBurn =
+    (Math.max(0, activeMet - 1) * 3.5 * profile.weight * workout.minutes) / 200;
+  const wearableBurn = workout.activeCalories || 0;
+  const wearableWeight = workout.type === "incline_walk" ? 0.65 : 0.55;
+  const burn = wearableBurn
+    ? formulaBurn * (1 - wearableWeight) + wearableBurn * wearableWeight
+    : formulaBurn;
+  const uncertainty = wearableBurn
+    ? workout.type === "incline_walk"
+      ? 0.12
+      : 0.2
+    : 0.2;
+
+  return {
+    burn,
+    low: Math.max(0, Math.round(burn * (1 - uncertainty))),
+    high: Math.round(burn * (1 + uncertainty)),
+    formula: Math.round(formulaBurn),
+    wearable: Math.round(wearableBurn),
+    source: wearableBurn ? "blend" : "formula",
+  };
+}
+
 function calculateEnergyPlan() {
   const profile = state.profile;
   if (!profile) return null;
@@ -1162,10 +1269,8 @@ function calculateEnergyPlan() {
     (profile.sex === "female" ? -161 : 5);
   const bmr = profile.manualBmr || calculatedBmr;
   const baseBurn = bmr * profile.activity;
-  const exercise = EXERCISE_METS[state.workout.type] || EXERCISE_METS.none;
-  const intensity = INTENSITY_FACTORS[state.workout.intensity] || 1;
-  const exerciseBurn =
-    (exercise.met * 3.5 * profile.weight * state.workout.minutes * intensity) / 200;
+  const exerciseEstimate = estimateExerciseBurn(state.workout, profile);
+  const exerciseBurn = exerciseEstimate.burn;
   const goalAdjustment = state.goal === "cut" ? -350 : state.goal === "bulk" ? 250 : 0;
   const exerciseReplenish = state.goal === "cut" ? 0.5 : state.goal === "bulk" ? 0.8 : 0.9;
   const rawCalories = baseBurn + exerciseBurn * exerciseReplenish + goalAdjustment;
@@ -1183,6 +1288,11 @@ function calculateEnergyPlan() {
     calculatedBmr,
     baseBurn,
     exerciseBurn,
+    exerciseLow: exerciseEstimate.low,
+    exerciseHigh: exerciseEstimate.high,
+    exerciseFormula: exerciseEstimate.formula,
+    exerciseWearable: exerciseEstimate.wearable,
+    exerciseSource: exerciseEstimate.source,
     calories,
     protein,
     fat,
@@ -1359,19 +1469,28 @@ function updateAiUi() {
   elements.trainingSummary.textContent =
     `${workout.label}${state.workout.type === "none" ? "" : ` · ${formatNumber(state.workout.minutes)} 分钟`}`;
   elements.trainingBurnSummary.textContent =
-    `今日训练消耗 ${formatNumber(plan?.exerciseBurn || 0)} kcal · ${INTENSITY_FACTORS[state.workout.intensity] ? (state.workout.intensity === "light" ? "轻松" : state.workout.intensity === "hard" ? "高强度" : "适中") : "适中"}`;
+    state.workout.type === "none"
+      ? "今日训练额外消耗 0 kcal"
+      : `额外消耗 ${formatNumber(plan?.exerciseLow || 0)}–${formatNumber(plan?.exerciseHigh || 0)} kcal · RPE ${state.workout.rpe || 6}`;
   elements.todayTrainingHeading.textContent =
     state.workout.type === "none" ? "今天还没有记录训练" : workout.label;
   elements.todayTrainingDetail.textContent =
     state.workout.type === "none"
       ? "训练只影响当天，明天会自动创建新的训练记录"
-      : `${formatNumber(state.workout.minutes)} 分钟 · ${
-          state.workout.intensity === "hard"
-            ? "高强度"
-            : state.workout.intensity === "light"
-              ? "轻松"
-              : "适中"
-        }${state.workout.note ? ` · ${state.workout.note}` : ""}`;
+      : [
+          state.workout.type === "strength"
+            ? STRENGTH_FOCUS[state.workout.focus] || "全身"
+            : null,
+          `${formatNumber(state.workout.minutes)} 分钟`,
+          state.workout.avgHeartRate ? `平均心率 ${formatNumber(state.workout.avgHeartRate)}` : null,
+          `RPE ${state.workout.rpe || 6}`,
+          state.workout.activeCalories
+            ? `手表活动 ${formatNumber(state.workout.activeCalories)} kcal`
+            : null,
+          plan ? `估算 ${formatNumber(plan.exerciseLow)}–${formatNumber(plan.exerciseHigh)} kcal` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
   elements.todayTrainingBurn.textContent = formatNumber(plan?.exerciseBurn || 0);
 
   const hasApiKey = Boolean(aiSettings.apiKey);
@@ -1382,9 +1501,66 @@ function updateAiUi() {
 
 function syncWorkoutInputs() {
   elements.workoutType.value = state.workout.type;
+  elements.workoutFocus.value = state.workout.focus || "full";
   elements.workoutMinutes.value = state.workout.minutes;
-  elements.workoutIntensity.value = state.workout.intensity;
+  elements.workoutHeartRate.value = state.workout.avgHeartRate || "";
+  elements.workoutActiveCalories.value = state.workout.activeCalories || "";
+  elements.workoutRpe.value = state.workout.rpe || 6;
   elements.workoutNote.value = state.workout.note;
+  updateWorkoutTypeFields();
+  refreshWorkoutEstimate();
+}
+
+function rpeDescription(value) {
+  const rpe = Number(value) || 0;
+  if (rpe <= 2) return "很轻松";
+  if (rpe <= 4) return "轻松";
+  if (rpe <= 6) return "费力";
+  if (rpe <= 8) return "很费力";
+  return "接近极限";
+}
+
+function updateWorkoutTypeFields() {
+  const type = elements.workoutType.value;
+  elements.workoutFocusField.hidden = type !== "strength";
+  const disabled = type === "none";
+  [elements.workoutMinutes, elements.workoutHeartRate, elements.workoutActiveCalories, elements.workoutRpe]
+    .forEach((input) => {
+      input.disabled = disabled;
+    });
+  elements.workoutRpeValue.textContent = `${elements.workoutRpe.value} · ${rpeDescription(elements.workoutRpe.value)}`;
+}
+
+function readWorkoutForm() {
+  const activeCalories = positiveNumber(elements.workoutActiveCalories.value, 0);
+  const avgHeartRate = positiveNumber(elements.workoutHeartRate.value, 0);
+  return normalizeWorkout({
+    type: elements.workoutType.value,
+    minutes: elements.workoutMinutes.value,
+    focus: elements.workoutFocus.value,
+    rpe: elements.workoutRpe.value,
+    avgHeartRate,
+    activeCalories,
+    note: elements.workoutNote.value,
+  });
+}
+
+function refreshWorkoutEstimate() {
+  const workout = readWorkoutForm();
+  const estimate = estimateExerciseBurn(workout, state.profile);
+  elements.workoutRpeValue.textContent = `${workout.rpe || elements.workoutRpe.value} · ${rpeDescription(workout.rpe || elements.workoutRpe.value)}`;
+  if (workout.type === "none" || !state.profile) {
+    elements.workoutEstimateRange.textContent = "-- kcal";
+    elements.workoutEstimateNote.textContent = state.profile
+      ? "选择训练类型后可估算"
+      : "请先填写身体资料";
+    return;
+  }
+  elements.workoutEstimateRange.textContent =
+    `${formatNumber(estimate.low)}–${formatNumber(estimate.high)} kcal`;
+  elements.workoutEstimateNote.textContent = estimate.wearable
+    ? `手表 ${formatNumber(estimate.wearable)} kcal · 本地公式 ${formatNumber(estimate.formula)} kcal · 加权估算`
+    : `根据时长、RPE${workout.avgHeartRate ? "、平均心率" : ""}和训练部位估算`;
 }
 
 function setBar(element, value, target) {
@@ -1852,7 +2028,20 @@ function renderDayRecord(period) {
         <div class="record-training-card">
           <span>TRAINING</span>
           <strong>${record ? EXERCISE_METS[record.trainingType].label : EXERCISE_METS[state.workout.type].label}</strong>
-          <p>${record ? `${formatNumber(record.trainingMinutes)} 分钟 · ${record.trainingIntensity === "hard" ? "高强度" : record.trainingIntensity === "light" ? "轻松" : "适中"}` : "今日尚未记录训练"}</p>
+          <p>${
+            record
+              ? [
+                  record.trainingType === "strength"
+                    ? STRENGTH_FOCUS[record.trainingFocus] || "全身"
+                    : null,
+                  `${formatNumber(record.trainingMinutes)} 分钟`,
+                  record.trainingHeartRate ? `心率 ${formatNumber(record.trainingHeartRate)}` : null,
+                  record.trainingRpe ? `RPE ${formatNumber(record.trainingRpe)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "今日尚未记录训练"
+          }</p>
         </div>
       </aside>
     </div>
@@ -1980,6 +2169,11 @@ function saveRecordWeight(dateKey, rawWeight) {
     trainingType: "none",
     trainingMinutes: 0,
     trainingIntensity: "moderate",
+    trainingRpe: 0,
+    trainingHeartRate: null,
+    trainingActiveCalories: null,
+    trainingFocus: "full",
+    exerciseBurn: 0,
     hasNutrition: false,
     updatedAt: "",
   };
@@ -2020,6 +2214,11 @@ function exportRecords() {
     "热量缺口kcal",
     "训练",
     "训练分钟",
+    "训练部位",
+    "RPE",
+    "平均心率bpm",
+    "手表活动消耗kcal",
+    "训练额外消耗kcal",
   ];
   const lines = rows.map(([date, record]) => {
     const training = EXERCISE_METS[record.trainingType]?.label || "无训练";
@@ -2036,6 +2235,11 @@ function exportRecords() {
       record.deficit ?? "",
       training,
       record.trainingMinutes,
+      record.trainingType === "strength" ? STRENGTH_FOCUS[record.trainingFocus] || "全身" : "",
+      record.trainingRpe || "",
+      record.trainingHeartRate ?? "",
+      record.trainingActiveCalories ?? "",
+      record.exerciseBurn ?? "",
     ]
       .map(csvCell)
       .join(",");
@@ -2436,12 +2640,7 @@ function openWorkoutDialog() {
 
 function handleWorkoutSubmit(event) {
   event.preventDefault();
-  state.workout = normalizeWorkout({
-    type: elements.workoutType.value,
-    minutes: elements.workoutMinutes.value,
-    intensity: elements.workoutIntensity.value,
-    note: elements.workoutNote.value,
-  });
+  state.workout = readWorkoutForm();
   state.workoutDate = formatDateKey(new Date());
   applyCalculatedTargets();
   persistState();
@@ -2591,8 +2790,14 @@ function buildAiCoachPrompt() {
 目标模式：${GOAL_PRESETS[state.goal].label}
 今日训练：${JSON.stringify({
     type: EXERCISE_METS[state.workout.type].label,
+    focus: state.workout.type === "strength" ? STRENGTH_FOCUS[state.workout.focus] : undefined,
     minutes: state.workout.minutes,
-    intensity: state.workout.intensity,
+    rpe: state.workout.rpe,
+    averageHeartRateBpm: state.workout.avgHeartRate,
+    wearableActiveCalories: state.workout.activeCalories,
+    estimatedActiveCaloriesRange: plan
+      ? [plan.exerciseLow, plan.exerciseHigh]
+      : null,
     note: state.workout.note,
   })}
 能量估算：${JSON.stringify(plan)}
@@ -2974,6 +3179,21 @@ elements.mobileTargetSettingsButton.addEventListener("click", openTargetDialog);
 elements.mobileAiSettingsButton.addEventListener("click", openAiSettingsDialog);
 elements.openWorkoutDialogButton.addEventListener("click", openWorkoutDialog);
 elements.workoutForm.addEventListener("submit", handleWorkoutSubmit);
+elements.workoutType.addEventListener("change", () => {
+  if (elements.workoutType.value !== "none" && Number(elements.workoutMinutes.value) <= 0) {
+    elements.workoutMinutes.value = elements.workoutType.value === "strength" ? 45 : 55;
+  }
+  updateWorkoutTypeFields();
+  refreshWorkoutEstimate();
+});
+elements.workoutFocus.addEventListener("change", refreshWorkoutEstimate);
+elements.workoutMinutes.addEventListener("input", refreshWorkoutEstimate);
+elements.workoutHeartRate.addEventListener("input", refreshWorkoutEstimate);
+elements.workoutActiveCalories.addEventListener("input", refreshWorkoutEstimate);
+elements.workoutRpe.addEventListener("input", () => {
+  updateWorkoutTypeFields();
+  refreshWorkoutEstimate();
+});
 elements.mobileExportButton.addEventListener("click", exportLocalBackup);
 elements.mobileImportButton.addEventListener("click", () => elements.mobileImportInput.click());
 elements.mobileImportInput.addEventListener("change", () => {
