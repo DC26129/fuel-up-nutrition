@@ -206,6 +206,22 @@
         </article>
       </section>
 
+      <section class="today-training-section" data-mobile-view="today" aria-labelledby="todayTrainingHeading">
+        <div class="today-training-card">
+          <span class="today-training-icon"><svg><use href="#icon-spark"></use></svg></span>
+          <div class="today-training-copy">
+            <p>TODAY TRAINING</p>
+            <h2 id="todayTrainingHeading">今日训练</h2>
+            <span id="todayTrainingDetail">今天还没有记录训练</span>
+          </div>
+          <div class="today-training-burn">
+            <strong id="todayTrainingBurn">0</strong>
+            <small>kcal</small>
+          </div>
+          <button id="openWorkoutDialogButton" type="button">记录训练</button>
+        </div>
+      </section>
+
       <section class="coach-panel" id="aiCoach" data-mobile-view="ai" aria-labelledby="aiCoachTitle">
         <div class="coach-panel-hero">
           <div class="coach-panel-topline">
@@ -443,7 +459,7 @@
           <p>训练与目标</p>
           <button id="mobileTrainingSettingsButton" type="button">
             <span class="settings-symbol settings-symbol--lime">↗</span>
-            <span><strong>身体与今日训练</strong><small id="mobileTrainingSummary">尚未记录训练</small></span>
+            <span><strong>身体与活动水平</strong><small id="mobileTrainingSummary">日常活动与基础代谢</small></span>
             <b>›</b>
           </button>
           <button id="mobileTargetSettingsButton" type="button">
@@ -836,8 +852,8 @@
 
         <div class="sheet-title-block">
           <p>COACH SETTINGS</p>
-          <h2>身体与今日训练</h2>
-          <span>用于估算基础代谢、训练消耗和 Daily Fuel。所有数据只保存在本地浏览器。</span>
+          <h2>身体与活动资料</h2>
+          <span>这里只保存固定的身体资料。今天的训练请在“今日”页面记录。</span>
         </div>
 
         <form id="profileForm">
@@ -882,11 +898,38 @@
           </label>
           <p class="field-help">当前按 1600 kcal 校准。留空则使用身高、体重和年龄公式估算。</p>
 
+          <label class="auto-target-toggle">
+            <input name="autoTargets" type="checkbox" checked />
+            <span>
+              <strong>自动更新 Daily Fuel</strong>
+              <small>保存身体资料或记录今日训练后，重新计算热量和三大营养素目标。</small>
+            </span>
+          </label>
+
+          <div class="form-error" id="profileFormError" role="alert"></div>
+          <button class="sheet-primary-button" type="submit">
+            <svg><use href="#icon-check"></use></svg>
+            保存身体资料
+          </button>
+        </form>
+      </div>
+    </dialog>
+
+    <dialog class="sheet" id="workoutDialog">
+      <div class="sheet-panel">
+        <div class="sheet-handle"></div>
+        <button class="sheet-close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+
+        <div class="sheet-title-block">
+          <p>TODAY TRAINING</p>
+          <h2>记录今日训练</h2>
+          <span>只影响今天。保存后会重新计算今日训练消耗和 Daily Fuel。</span>
+        </div>
+
+        <form id="workoutForm">
           <div class="profile-workout-block">
-            <div class="profile-workout-heading">
-              <strong>今日训练</strong>
-              <span>仅保留你实际进行的两类训练</span>
-            </div>
             <div class="profile-workout-grid">
               <label class="form-field">
                 <span>训练类型</span>
@@ -920,19 +963,9 @@
               </label>
             </div>
           </div>
-
-          <label class="auto-target-toggle">
-            <input name="autoTargets" type="checkbox" checked />
-            <span>
-              <strong>自动更新 Daily Fuel</strong>
-              <small>保存身体数据或更新训练后，重新计算热量和三大营养素目标。</small>
-            </span>
-          </label>
-
-          <div class="form-error" id="profileFormError" role="alert"></div>
           <button class="sheet-primary-button" type="submit">
             <svg><use href="#icon-check"></use></svg>
-            保存身体数据与训练
+            保存今日训练
           </button>
         </form>
       </div>

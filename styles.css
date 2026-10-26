@@ -813,6 +813,100 @@ svg {
   transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.today-training-section {
+  margin-top: 14px;
+}
+
+.today-training-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(250, 248, 255, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 20px;
+  box-shadow: 0 10px 26px rgba(39, 34, 88, 0.055);
+}
+
+.today-training-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  color: var(--ink);
+  background: var(--lime);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.today-training-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+}
+
+.today-training-copy {
+  min-width: 0;
+}
+
+.today-training-copy p {
+  margin: 0 0 2px;
+  color: var(--purple);
+  font-family: var(--font-numeric);
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.today-training-copy h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.today-training-copy > span {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-training-burn {
+  text-align: right;
+}
+
+.today-training-burn strong {
+  display: block;
+  font-family: var(--font-numeric);
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.today-training-burn small {
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.today-training-card > button {
+  padding: 9px 13px;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--purple-light);
+  border: 0;
+  border-radius: 99px;
+}
+
+.today-training-card > button:hover {
+  background: var(--purple);
+}
+
 .ai-section {
   display: grid;
   grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
@@ -4943,6 +5037,26 @@ svg {
   .macro-value {
     margin-top: 18px;
     font-size: 25px;
+  }
+
+  .today-training-card {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .today-training-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .today-training-copy > span {
+    white-space: normal;
+  }
+
+  .today-training-card > button {
+    grid-column: 2 / -1;
+    width: 100%;
   }
 
   .ai-insight {

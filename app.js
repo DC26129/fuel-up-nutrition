@@ -6,7 +6,7 @@ const CLOUD_SYNC_CONFIG = {
   publishableKey:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4c2J5bWtmcWdleHlna3Rhb2toIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMTc5NjYsImV4cCI6MjEwODU5Mzk2Nn0.JsujQANAdEXqDVeyGQxN6puH155PNt2SyhXzn0vg_Ls",
 };
-const DATA_VERSION = 6;
+const DATA_VERSION = 7;
 
 const GOAL_PRESETS = {
   cut: {
@@ -271,6 +271,10 @@ const elements = {
   trainingSummary: document.querySelector("#trainingSummary"),
   trainingBurnSummary: document.querySelector("#trainingBurnSummary"),
   profileAvatar: document.querySelector("#profileAvatar"),
+  todayTrainingHeading: document.querySelector("#todayTrainingHeading"),
+  todayTrainingDetail: document.querySelector("#todayTrainingDetail"),
+  todayTrainingBurn: document.querySelector("#todayTrainingBurn"),
+  openWorkoutDialogButton: document.querySelector("#openWorkoutDialogButton"),
   aiFuelOrbit: document.querySelector("#aiFuelOrbit"),
   aiDailyFuelPercent: document.querySelector("#aiDailyFuelPercent"),
   aiDailyFuelValue: document.querySelector("#aiDailyFuelValue"),
@@ -280,6 +284,8 @@ const elements = {
   workoutMinutes: document.querySelector("#workoutMinutes"),
   workoutIntensity: document.querySelector("#workoutIntensity"),
   workoutNote: document.querySelector("#workoutNote"),
+  workoutDialog: document.querySelector("#workoutDialog"),
+  workoutForm: document.querySelector("#workoutForm"),
   aiSettingsButton: document.querySelector("#aiSettingsButton"),
   aiCaloriePercent: document.querySelector("#aiCaloriePercent"),
   aiCaloriesRemaining: document.querySelector("#aiCaloriesRemaining"),
@@ -346,6 +352,7 @@ function createInitialState() {
       intensity: "moderate",
       note: "",
     },
+    workoutDate: formatDateKey(new Date()),
     records: {},
     aiAdvice: null,
     aiAdviceSnapshot: "",
@@ -363,6 +370,8 @@ function loadState() {
     }
 
     const goal = GOAL_PRESETS[parsed.goal] ? parsed.goal : "cut";
+    const today = formatDateKey(new Date());
+    const workoutDate = parsed.workoutDate || today;
     const targets = { ...GOAL_PRESETS[goal], ...(parsed.targets || {}) };
 
     const products = parsed.products.map(normalizeProduct).filter(Boolean);
@@ -394,7 +403,11 @@ function loadState() {
       goal,
       targets: normalizeTargets(targets),
       profile,
-      workout: normalizeWorkout(parsed.workout),
+      workout:
+        workoutDate === today
+          ? normalizeWorkout(parsed.workout)
+          : normalizeWorkout({ type: "none", minutes: 0, intensity: "moderate", note: "" }),
+      workoutDate: today,
       records: normalizeRecords(parsed.records),
       aiAdvice: normalizeAiAdvice(parsed.aiAdvice),
       aiAdviceSnapshot:
@@ -999,8 +1012,22 @@ async function checkCloudForUpdates() {
   await pullCloudNow({ ask: false });
 }
 
+function ensureTodayWorkout() {
+  const today = formatDateKey(new Date());
+  if (state.workoutDate === today) return false;
+  state.workoutDate = today;
+  state.workout = {
+    type: "none",
+    minutes: 0,
+    intensity: "moderate",
+    note: "",
+  };
+  return true;
+}
+
 function persistState() {
   try {
+    ensureTodayWorkout();
     syncTodayRecord();
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     scheduleCloudPush();
@@ -1333,6 +1360,19 @@ function updateAiUi() {
     `${workout.label}${state.workout.type === "none" ? "" : ` · ${formatNumber(state.workout.minutes)} 分钟`}`;
   elements.trainingBurnSummary.textContent =
     `今日训练消耗 ${formatNumber(plan?.exerciseBurn || 0)} kcal · ${INTENSITY_FACTORS[state.workout.intensity] ? (state.workout.intensity === "light" ? "轻松" : state.workout.intensity === "hard" ? "高强度" : "适中") : "适中"}`;
+  elements.todayTrainingHeading.textContent =
+    state.workout.type === "none" ? "今天还没有记录训练" : workout.label;
+  elements.todayTrainingDetail.textContent =
+    state.workout.type === "none"
+      ? "训练只影响当天，明天会自动创建新的训练记录"
+      : `${formatNumber(state.workout.minutes)} 分钟 · ${
+          state.workout.intensity === "hard"
+            ? "高强度"
+            : state.workout.intensity === "light"
+              ? "轻松"
+              : "适中"
+        }${state.workout.note ? ` · ${state.workout.note}` : ""}`;
+  elements.todayTrainingBurn.textContent = formatNumber(plan?.exerciseBurn || 0);
 
   const hasApiKey = Boolean(aiSettings.apiKey);
   elements.apiStatus.classList.toggle("is-configured", hasApiKey);
@@ -2056,17 +2096,17 @@ function updateMobileSettings() {
   elements.mobileProfileDetail.textContent = profile
     ? `${formatNumber(profile.height, 1)} cm · ${formatNumber(profile.weight, 1)} kg · ${GOAL_PRESETS[state.goal].label}`
     : "填写身体数据后开始计算";
-  const workout = EXERCISE_METS[state.workout.type];
-  elements.mobileTrainingSummary.textContent =
-    state.workout.type === "none"
-      ? "无训练"
-      : `${workout.label} · ${formatNumber(state.workout.minutes)} 分钟 · ${
-          state.workout.intensity === "hard"
-            ? "高强度"
-            : state.workout.intensity === "light"
-              ? "轻松"
-              : "适中"
-        }`;
+  const activityLabels = {
+    1.2: "久坐办公",
+    1.3: "轻度活动",
+    1.4: "中度活动",
+    1.55: "高体力活动",
+  };
+  elements.mobileTrainingSummary.textContent = profile
+    ? `${activityLabels[profile.activity] || "日常活动"} · ${
+        profile.manualBmr ? `BMR ${formatNumber(profile.manualBmr)} kcal` : "公式估算 BMR"
+      }`
+    : "身体资料与日常活动水平";
   elements.mobileTargetSummary.textContent =
     `Daily Fuel ${formatNumber(state.targets.calories)} kcal · 蛋白质 ${formatNumber(state.targets.protein)} g`;
   elements.mobileAiSummary.textContent = aiSettings.apiKey
@@ -2357,7 +2397,6 @@ function openProfileDialog() {
   const form = elements.profileForm;
   form.reset();
   elements.profileFormError.classList.remove("is-visible");
-  syncWorkoutInputs();
 
   if (state.profile) {
     form.elements.sex.value = state.profile.sex;
@@ -2383,17 +2422,36 @@ function handleProfileSubmit(event) {
     manualBmr: data.get("manualBmr"),
     autoTargets: data.get("autoTargets") === "on",
   });
+  applyCalculatedTargets();
+  persistState();
+  closeDialog(elements.profileDialog);
+  renderAll();
+  showToast(state.profile.autoTargets ? "身体资料已保存，Daily Fuel 已更新" : "身体资料已保存");
+}
+
+function openWorkoutDialog() {
+  syncWorkoutInputs();
+  openDialog(elements.workoutDialog);
+}
+
+function handleWorkoutSubmit(event) {
+  event.preventDefault();
   state.workout = normalizeWorkout({
     type: elements.workoutType.value,
     minutes: elements.workoutMinutes.value,
     intensity: elements.workoutIntensity.value,
     note: elements.workoutNote.value,
   });
+  state.workoutDate = formatDateKey(new Date());
   applyCalculatedTargets();
   persistState();
-  closeDialog(elements.profileDialog);
+  closeDialog(elements.workoutDialog);
   renderAll();
-  showToast(state.profile.autoTargets ? "身体与训练已保存，Daily Fuel 已更新" : "身体与训练已保存");
+  showToast(
+    state.workout.type === "none"
+      ? "已记录为无训练，Daily Fuel 已更新"
+      : "今日训练已保存，Daily Fuel 已更新"
+  );
 }
 
 function openAiSettingsDialog() {
@@ -2914,6 +2972,8 @@ elements.mobileProfileButton.addEventListener("click", openProfileDialog);
 elements.mobileTrainingSettingsButton.addEventListener("click", openProfileDialog);
 elements.mobileTargetSettingsButton.addEventListener("click", openTargetDialog);
 elements.mobileAiSettingsButton.addEventListener("click", openAiSettingsDialog);
+elements.openWorkoutDialogButton.addEventListener("click", openWorkoutDialog);
+elements.workoutForm.addEventListener("submit", handleWorkoutSubmit);
 elements.mobileExportButton.addEventListener("click", exportLocalBackup);
 elements.mobileImportButton.addEventListener("click", () => elements.mobileImportInput.click());
 elements.mobileImportInput.addEventListener("change", () => {
@@ -2954,10 +3014,24 @@ elements.disconnectSyncButton.addEventListener("click", () => {
   showToast("已停止设备同步");
 });
 window.addEventListener("focus", () => {
-  if (document.visibilityState === "visible") checkCloudForUpdates();
+  if (document.visibilityState === "visible") {
+    if (ensureTodayWorkout()) {
+      applyCalculatedTargets();
+      persistState();
+      renderAll();
+    }
+    checkCloudForUpdates();
+  }
 });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") checkCloudForUpdates();
+  if (document.visibilityState === "visible") {
+    if (ensureTodayWorkout()) {
+      applyCalculatedTargets();
+      persistState();
+      renderAll();
+    }
+    checkCloudForUpdates();
+  }
 });
 
 // Product library controls
@@ -3065,6 +3139,7 @@ document.querySelectorAll("dialog").forEach((dialog) => {
   });
 });
 
+ensureTodayWorkout();
 applyCalculatedTargets();
 persistState();
 syncWorkoutInputs();
