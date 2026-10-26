@@ -5165,6 +5165,11 @@ svg {
     border-radius: 20px;
   }
 
+  .plate-orb {
+    right: 18px;
+    left: auto;
+  }
+
   .meal-item {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 9px;
